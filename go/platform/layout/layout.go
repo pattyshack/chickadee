@@ -133,12 +133,7 @@ func (builder *SegmentBuilder) AppendBasicData(data []byte) {
 	builder.AppendData(data, Definitions{}, Relocations{})
 }
 
-func (builder *SegmentBuilder) Finalize(
-	parameters Parameters,
-) (
-	Segment,
-	error,
-) {
+func (builder *SegmentBuilder) Finalize(config Config) (Segment, error) {
 	defs, labels, symbols, err := MergeDefinitions(builder.Segments...)
 	if err != nil {
 		return Segment{}, err
@@ -151,7 +146,7 @@ func (builder *SegmentBuilder) Finalize(
 	buffered := Content{}
 	for _, segment := range builder.Segments {
 		buffered.Merge(segment.Content)
-		if buffered.Size > parameters.MergeContentThreshold {
+		if buffered.Size > config.MergeContentThreshold {
 			merged.Content.Append(buffered.Flatten())
 			buffered = Content{}
 		}
@@ -161,7 +156,7 @@ func (builder *SegmentBuilder) Finalize(
 		merged.Content.Append(buffered.Flatten())
 	}
 
-	err = Link(&merged, labels, symbols, parameters.Relocator)
+	err = Link(&merged, labels, symbols, config.Relocator)
 	if err != nil {
 		return Segment{}, err
 	}
@@ -255,32 +250,32 @@ func (builder *ObjectFileBuilder) Merge(file ObjectFile) {
 }
 
 func (builder *ObjectFileBuilder) Finalize(
-	parameters Parameters,
+	config Config,
 ) (
 	ObjectFile,
 	error,
 ) {
 	file := ObjectFile{}
 
-	text, err := builder.Text.Finalize(parameters)
+	text, err := builder.Text.Finalize(config)
 	if err != nil {
 		return ObjectFile{}, err
 	}
 	file.Text = text
 
-	init, err := builder.Init.Finalize(parameters)
+	init, err := builder.Init.Finalize(config)
 	if err != nil {
 		return ObjectFile{}, err
 	}
 	file.Init = init
 
-	readOnlyData, err := builder.ReadOnlyData.Finalize(parameters)
+	readOnlyData, err := builder.ReadOnlyData.Finalize(config)
 	if err != nil {
 		return ObjectFile{}, err
 	}
 	file.ReadOnlyData = readOnlyData
 
-	data, err := builder.Data.Finalize(parameters)
+	data, err := builder.Data.Finalize(config)
 	if err != nil {
 		return ObjectFile{}, err
 	}
@@ -303,17 +298,17 @@ type ObjectFile struct {
 	BSS          BSSSegment
 }
 
-// NOTE: start symbol is not part of Parameters since each module may have its
+// NOTE: start symbol is not part of Config since each module may have its
 // own start symbol (a module may be both a library and a binary).
 func (file ObjectFile) ToExecutableImage(
-	parameters Parameters,
+	config Config,
 	startSymbol string,
 ) (
 	ExecutableImage,
 	error,
 ) {
-	pageSize := parameters.MemoryPageSize
-	alignment := parameters.RegisterAlignment
+	pageSize := config.MemoryPageSize
+	alignment := config.RegisterAlignment
 	if pageSize%alignment != 0 {
 		return ExecutableImage{}, fmt.Errorf(
 			"memory page size (%d) not multiples of section alignment (%d)",
@@ -325,38 +320,38 @@ func (file ObjectFile) ToExecutableImage(
 		return ExecutableImage{}, fmt.Errorf("empty .text segment")
 	}
 
-	err := file.Text.MaybePad(alignment, parameters.InstructionPadding)
+	err := file.Text.MaybePad(alignment, config.InstructionPadding)
 	if err != nil {
 		return ExecutableImage{}, err
 	}
 
-	file.Init.Append(parameters.InitEpilogue)
+	file.Init.Append(config.InitEpilogue)
 	file.Init.Definitions.Symbols = append(
 		file.Init.Definitions.Symbols,
 		&Symbol{
 			Kind:    FunctionKind,
 			Section: InitSection,
-			Name:    parameters.InitSymbol,
+			Name:    config.InitSymbol,
 			Offset:  0,
 			Size:    file.Init.Size,
 		})
 
-	err = file.Init.MaybePad(alignment, parameters.InstructionPadding)
+	err = file.Init.MaybePad(alignment, config.InstructionPadding)
 	if err != nil {
 		return ExecutableImage{}, err
 	}
 
-	err = file.ReadOnlyData.MaybePad(alignment, parameters.DataPadding)
+	err = file.ReadOnlyData.MaybePad(alignment, config.DataPadding)
 	if err != nil {
 		return ExecutableImage{}, err
 	}
 
-	err = file.Data.MaybePad(alignment, parameters.DataPadding)
+	err = file.Data.MaybePad(alignment, config.DataPadding)
 	if err != nil {
 		return ExecutableImage{}, err
 	}
 
-	file.BSS.Pad(parameters.RegisterAlignment)
+	file.BSS.Pad(config.RegisterAlignment)
 
 	image := ExecutableImage{
 		MemoryPageSize:    pageSize,
@@ -368,7 +363,7 @@ func (file ObjectFile) ToExecutableImage(
 		BSSSize:           file.BSS.Size,
 	}
 
-	offset := parameters.ExecutableImageStartPage * pageSize
+	offset := config.ExecutableImageStartPage * pageSize
 
 	image.ExecutableSegmentStart = offset
 	file.Text.ShiftAll(offset)
@@ -422,7 +417,7 @@ func (file ObjectFile) ToExecutableImage(
 	}
 	image.EntryPoint = start.Offset
 
-	err = Link(&image, labels, symbols, parameters.Relocator)
+	err = Link(&image, labels, symbols, config.Relocator)
 	if err != nil {
 		return ExecutableImage{}, err
 	}

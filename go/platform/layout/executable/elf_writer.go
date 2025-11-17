@@ -9,7 +9,7 @@ import (
 )
 
 type ElfWriter struct {
-	Parameters
+	Config
 
 	Header Elf64Header
 
@@ -41,19 +41,14 @@ type ElfWriter struct {
 }
 
 func NewElfWriter(
-	parameters Parameters,
+	config Config,
 	image layout.ExecutableImage,
 ) (
 	ElfWriter,
 	error,
 ) {
-	dataEncoding := ELFDATA2LSB
-	if parameters.ByteOrder == binary.BigEndian {
-		dataEncoding = ELFDATA2MSB
-	}
-
 	sectionStringTableIndex := uint16(1)
-	entryPoint := parameters.VirtualAddressStart + uint64(image.EntryPoint)
+	entryPoint := config.VirtualAddressStart + uint64(image.EntryPoint)
 
 	// NOTE: We'll assign string tables and symbol table to fixed section header
 	// locations at the front of the list to simplify file generation.
@@ -81,7 +76,7 @@ func NewElfWriter(
 	//
 	// TODO INTERP for dynamic linking / PIC executable
 	writer := ElfWriter{
-		Parameters: parameters,
+		Config: config,
 
 		// NOTE: SectionHeaderStart, NumProgramHeaderEntries and
 		// NumSectionHeaderEntries are defer populated.
@@ -89,14 +84,14 @@ func NewElfWriter(
 			ElfIdentifier: ElfIdentifier{
 				Magic:              [4]byte{0x7f, 'E', 'L', 'F'},
 				Class:              2, // ELFCLASS64 (we don't support elf32 format)
-				DataEncoding:       dataEncoding,
+				DataEncoding:       ELFDATA2LSB,
 				IdentifierVersion:  1, // EI_CURRENT (only valid value)
 				OperatingSystemABI: 0, // ELFOSABI_NONE (aka System V ABI)
 				ABIVersion:         0, // (only valid value)
 			},
 			// TODO switch to position independent executable (ET_DYN)
 			FileType:                ET_EXEC,
-			MachineArchitecture:     parameters.ElfMachineArchitecture,
+			MachineArchitecture:     config.ElfMachineArchitecture,
 			FormatVersion:           1, // EV_CURRENT (only valid value)
 			EntryPointAddress:       entryPoint,
 			ProgramHeaderOffset:     Elf64HeaderSize,
@@ -456,14 +451,14 @@ func (elf ElfWriter) writeHeader(writer io.Writer) (int64, error) {
 	headerPage := make([]byte, elf.MemoryPageSize)
 	remaining := headerPage
 
-	n, err := binary.Encode(remaining, elf.ByteOrder, elf.Header)
+	n, err := binary.Encode(remaining, binary.LittleEndian, elf.Header)
 	if err != nil || n != Elf64HeaderSize {
 		panic("should never happen")
 	}
 	remaining = remaining[n:]
 
 	for _, entry := range elf.ProgramHeader {
-		n, err := binary.Encode(remaining, elf.ByteOrder, entry)
+		n, err := binary.Encode(remaining, binary.LittleEndian, entry)
 		if err != nil || n != Elf64ProgramHeaderEntrySize {
 			panic("should never happen")
 		}
@@ -627,7 +622,7 @@ func (elf ElfWriter) writeSymbolTable(
 			return 0, err
 		}
 
-		n, err := binary.Encode(buffer, elf.ByteOrder, elfSymbol)
+		n, err := binary.Encode(buffer, binary.LittleEndian, elfSymbol)
 		if err != nil || n != Elf64SymbolEntrySize {
 			panic("should never happen")
 		}
@@ -710,7 +705,7 @@ func (elf ElfWriter) writeSectionHeader(
 
 	buffer := make([]byte, Elf64SectionHeaderEntrySize)
 	for _, entry := range elf.SectionHeader {
-		n, err := binary.Encode(buffer, elf.ByteOrder, entry)
+		n, err := binary.Encode(buffer, binary.LittleEndian, entry)
 		if err != nil || n != Elf64SectionHeaderEntrySize {
 			panic("should never happen")
 		}

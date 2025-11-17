@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	testParameters = Parameters{
+	testConfig = Config{
 		MergeContentThreshold:    20,
 		RegisterAlignment:        5,
 		MemoryPageSize:           10,
@@ -176,7 +176,7 @@ func (LayoutSuite) TestLinkBasicBlocks(t *testing.T) {
 			},
 		})
 
-	segment, err := builder.Finalize(testParameters)
+	segment, err := builder.Finalize(testConfig)
 	expect.Nil(t, err)
 
 	expect.Equal(
@@ -323,7 +323,7 @@ func (LayoutSuite) TestLinkFunctions(t *testing.T) {
 			},
 		})
 
-	segment, err := builder.Finalize(testParameters)
+	segment, err := builder.Finalize(testConfig)
 	expect.Nil(t, err)
 
 	expect.Equal(
@@ -453,7 +453,7 @@ func (LayoutSuite) TestLinkGlobalObjects(t *testing.T) {
 		},
 		Relocations{})
 
-	segment, err := builder.Finalize(testParameters)
+	segment, err := builder.Finalize(testConfig)
 	expect.Nil(t, err)
 
 	expect.Equal(
@@ -594,7 +594,7 @@ func (LayoutSuite) TestObjectFileAndExecutableImage(t *testing.T) {
 	// Verify intermediate object file
 	//
 
-	file, err := builder.Finalize(testParameters)
+	file, err := builder.Finalize(testConfig)
 	expect.Nil(t, err)
 
 	expect.Equal(t, textContent, string(file.Text.Content.Flatten()))
@@ -716,7 +716,7 @@ func (LayoutSuite) TestObjectFileAndExecutableImage(t *testing.T) {
 	// Verify executable image
 	//
 
-	image, err := file.ToExecutableImage(testParameters, "textFunc")
+	image, err := file.ToExecutableImage(testConfig, "textFunc")
 	expect.Nil(t, err)
 
 	expect.Equal(t, 12, image.EntryPoint)

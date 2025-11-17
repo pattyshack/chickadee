@@ -8,8 +8,7 @@ const (
 	Elf64ProgramHeaderEntrySize = 56
 	Elf64SymbolEntrySize        = 24
 
-	ELFDATA2LSB = byte(1) // little endian
-	ELFDATA2MSB = byte(1) // big endian
+	ELFDATA2LSB = 1 // aka little endian
 
 	EM_X86_64 = 62 // aka amd64
 

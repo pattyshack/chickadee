@@ -1,6 +1,6 @@
 package layout
 
-type Parameters struct {
+type Config struct {
 	// On Finalize, merge content whenever the accumulated size is larger than
 	// the threshold.
 	MergeContentThreshold int64

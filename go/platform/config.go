@@ -14,10 +14,10 @@ const (
 	Linux = OperatingSystem("linux")
 )
 
-type Parameters struct {
+type Config struct {
 	Architecture
 	OperatingSystem
 
-	Layout           layout.Parameters
-	ExecutableFormat executable.Parameters
+	Layout           layout.Config
+	ExecutableFormat executable.Config
 }

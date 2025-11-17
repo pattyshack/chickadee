@@ -1,12 +1,6 @@
 package executable
 
-import (
-	"encoding/binary"
-)
-
-type Parameters struct {
-	binary.ByteOrder
-
+type Config struct {
 	// Where the compiled executable should be loaded (e.g., 4MB on amd64 linux)
 	VirtualAddressStart uint64
 
