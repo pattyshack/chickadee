@@ -23,12 +23,11 @@
 // is considered occupied.  This simplifies data location accounting.
 //
 // - Each architecture have exactly one instruction pointer register, one
-// stack pointer register and one frame pointer register.  The instruction
-// pointer and stack pointer are always live and hence can't be used for
-// storage and general/float operations.  We won't make use of a base pointer
-// register.  However, all call conventions respect the register that
-// normally holds the base pointer (e.g., RBP), and treat that register as
-// callee-saved.
+// stack pointer register.  The instruction pointer and stack pointer are
+// always live and hence can't be used for storage and general/float
+// operations.  We won't make use of a frame pointer internally, however,
+// call conventions will have the option to specify a frame pointer register.
+// (XXX: maybe add option to write called address in function prologue)
 //
 // - We assume user input errors are handled prior to ir translation. The ir
 // error checks are only used for guarding against compiler internal
