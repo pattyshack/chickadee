@@ -3,6 +3,9 @@ package architecture
 type Register struct {
 	Name string
 
+	// Architecture specific instruction encoding. e.g., X.Reg on x64
+	Encoding int
+
 	AllowGeneralOperations bool
 	AllowFloatOperations   bool
 
@@ -11,16 +14,18 @@ type Register struct {
 	Index int
 }
 
-func NewGeneralRegister(name string) *Register {
+func NewGeneralRegister(name string, encoding int) *Register {
 	return &Register{
 		Name:                   name,
+		Encoding:               encoding,
 		AllowGeneralOperations: true,
 	}
 }
 
-func NewFloatRegister(name string) *Register {
+func NewFloatRegister(name string, encoding int) *Register {
 	return &Register{
 		Name:                 name,
+		Encoding:             encoding,
 		AllowFloatOperations: true,
 	}
 }
