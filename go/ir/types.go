@@ -2,7 +2,7 @@ package ir
 
 const (
 	generalRegisterSize = 8
-	pointerSize         = generalRegisterSize
+	addressSize         = generalRegisterSize
 )
 
 type Type interface {
@@ -97,27 +97,30 @@ const (
 	Float64 = FloatType(8)
 )
 
-type PointerType struct {
+// NOTE: Unlike c pointer, int8 address type is not the same as int8 array
+// address type.  We don't support general pointer arithmetic and only array
+// address type is index accessible.
+type AddressType struct {
 	ValueType Type
 }
 
-func (PointerType) isTypeExpression() {}
+func (AddressType) isTypeExpression() {}
 
-func (thisPtr PointerType) Equals(other Type) bool {
-	otherPtr, ok := other.(PointerType)
+func (thisAddr AddressType) Equals(other Type) bool {
+	otherAddr, ok := other.(AddressType)
 	if !ok {
 		return false
 	}
 
-	return thisPtr.ValueType.Equals(otherPtr.ValueType)
+	return thisAddr.ValueType.Equals(otherAddr.ValueType)
 }
 
-func (PointerType) Alignment() int {
-	return pointerSize
+func (AddressType) Alignment() int {
+	return addressSize
 }
 
-func (PointerType) Size() int {
-	return pointerSize
+func (AddressType) Size() int {
+	return addressSize
 }
 
 type CallConventionKind string
@@ -165,22 +168,40 @@ func (thisFunction *FunctionType) Equals(other Type) bool {
 }
 
 func (*FunctionType) Alignment() int {
-	return pointerSize
+	return addressSize
 }
 
 func (*FunctionType) Size() int {
-	return pointerSize
+	return addressSize
 }
 
 type ArrayType struct {
-	NumElements int
 	ElementType Type
+	// NOTE: use -1 for unknown length array, non-negative for fixed length array
+	NumElements int
+
+	// NOTE: (internal use only) This is not part of the type signature.
+	ComputedSize int
 }
 
-func (ArrayType) isTypeExpression() {}
+func NewUnknownLengthArrayType(elementType Type) *ArrayType {
+	return &ArrayType{
+		ElementType: elementType,
+		NumElements: -1,
+	}
+}
 
-func (thisArray ArrayType) Equals(other Type) bool {
-	otherArray, ok := other.(ArrayType)
+func NewFixedLengthArrayType(elementType Type, numElements int) *ArrayType {
+	return &ArrayType{
+		ElementType: elementType,
+		NumElements: numElements,
+	}
+}
+
+func (*ArrayType) isTypeExpression() {}
+
+func (thisArray *ArrayType) Equals(other Type) bool {
+	otherArray, ok := other.(*ArrayType)
 	if !ok {
 		return false
 	}
@@ -189,12 +210,19 @@ func (thisArray ArrayType) Equals(other Type) bool {
 		thisArray.ElementType.Equals(otherArray.ElementType)
 }
 
-func (t ArrayType) Alignment() int {
+func (t *ArrayType) Alignment() int {
 	return t.ElementType.Alignment()
 }
 
-func (t ArrayType) Size() int {
-	return t.NumElements * t.ElementType.Size()
+func (t *ArrayType) Size() int {
+	if t.NumElements < 0 {
+		panic("unknown number of elements in array")
+	}
+
+	if t.ComputedSize == 0 {
+		t.ComputedSize = roundUpLastChunk(t.NumElements * t.ElementType.Size())
+	}
+	return t.ComputedSize
 }
 
 type Field struct {
@@ -205,12 +233,11 @@ type Field struct {
 	ComputedOffset int // relative to the beginning of the record
 }
 
+// NOTE: we do not support packed struct since that complicates data
+// location book keeping / code generation (a simple value in a packed struct
+// may span multiple data chunks)
 type StructType struct {
 	Fields []*Field
-
-	// When true, fields are not alignment padded.  When false, fields are
-	// alignment padded, following c struct convention.
-	IsPacked bool
 
 	// NOTE: (internal use only) This is not part of the type signature.
 	ComputedAlignment int
@@ -225,8 +252,7 @@ func (thisStruct *StructType) Equals(other Type) bool {
 		return false
 	}
 
-	if thisStruct.IsPacked != otherStruct.IsPacked ||
-		len(thisStruct.Fields) != len(otherStruct.Fields) {
+	if len(thisStruct.Fields) != len(otherStruct.Fields) {
 		return false
 	}
 
@@ -263,30 +289,13 @@ func (t *StructType) computeSizeAndAlignment() {
 			t.ComputedAlignment = alignment
 		}
 
-		if !t.IsPacked {
-			t.addAlignmentPadding(alignment)
-		}
-
+		t.addAlignmentPadding(alignment)
 		field.ComputedOffset = t.ComputedSize
 		t.ComputedSize += field.Type.Size()
 	}
 
-	if !t.IsPacked {
-		t.addAlignmentPadding(t.ComputedAlignment)
-
-		// NOTE: we'll round up the size to the nearest power of 2 that fits within
-		// a general register since memory operations typically operate in power of
-		// 2 units.
-		lastChunkSize := t.ComputedSize % generalRegisterSize
-		if lastChunkSize > 0 {
-			roundUpSize := 1
-			for roundUpSize < lastChunkSize {
-				roundUpSize <<= 1
-			}
-
-			t.ComputedSize += (roundUpSize - lastChunkSize)
-		}
-	}
+	t.addAlignmentPadding(t.ComputedAlignment)
+	t.ComputedSize = roundUpLastChunk(t.ComputedSize)
 }
 
 func (t *StructType) addAlignmentPadding(alignment int) {
@@ -294,4 +303,21 @@ func (t *StructType) addAlignmentPadding(alignment int) {
 	if mod > 0 {
 		t.ComputedSize += alignment - mod
 	}
+}
+
+// NOTE: we'll round up the size to the nearest power of 2 that fits within
+// a general register since memory operations typically operate in power of
+// 2 units.
+func roundUpLastChunk(size int) int {
+	lastChunkSize := size % generalRegisterSize
+	if lastChunkSize > 0 {
+		roundUpSize := 1
+		for roundUpSize < lastChunkSize {
+			roundUpSize <<= 1
+		}
+
+		size += (roundUpSize - lastChunkSize)
+	}
+
+	return size
 }
