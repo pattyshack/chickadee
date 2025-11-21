@@ -98,8 +98,8 @@ const (
 )
 
 // NOTE: Unlike c pointer, int8 address type is not the same as int8 array
-// address type.  We don't support general pointer arithmetic and only array
-// address type is index accessible.
+// address type.  We don't support general pointer arithmetic and only
+// struct/array address type is index accessible.
 type AddressType struct {
 	ValueType Type
 }

@@ -1,7 +1,7 @@
 package ir
 
-type Value interface {
-	isValue()
+type Reference interface {
+	isReference()
 
 	Type() Type
 }
@@ -14,7 +14,7 @@ type FunctionReference struct {
 	FuncType *FunctionType
 }
 
-func (*FunctionReference) isValue() {}
+func (*FunctionReference) isReference() {}
 
 func (ref *FunctionReference) Type() Type {
 	return ref.FuncType
@@ -28,7 +28,7 @@ type AddressReference struct {
 	ValueType Type
 }
 
-func (*AddressReference) isValue() {}
+func (*AddressReference) isReference() {}
 
 func (ref *AddressReference) Type() Type {
 	return AddressType{
@@ -45,7 +45,7 @@ type ConstantReference struct {
 	Content      []byte
 }
 
-func (*ConstantReference) isValue() {}
+func (*ConstantReference) isReference() {}
 
 func (ref *ConstantReference) Type() Type {
 	return ref.ConstantType
@@ -59,7 +59,7 @@ type LocalReference struct {
 	UseDef *LocalDefinition
 }
 
-func (*LocalReference) isValue() {}
+func (*LocalReference) isReference() {}
 
 func (ref *LocalReference) Type() Type {
 	return ref.UseDef.Type
@@ -68,11 +68,32 @@ func (ref *LocalReference) Type() Type {
 // Local immediate
 type Immediate struct {
 	ImmediateType Type
-	Value         []byte
+	Reference     []byte
 }
 
-func (*Immediate) isValue() {}
+func (*Immediate) isReference() {}
 
 func (imm *Immediate) Type() Type {
 	return imm.ImmediateType
+}
+
+type ElementIndex struct {
+	IsArrayIndex bool // false indicate field index
+
+	Field string
+	Index int
+}
+
+// (Similar to llvm's getelementptr, but operates on all data types) This
+// represents data chunk / address offset calculation that will be used for
+// accessing/modifying the referenced value.
+type Value struct {
+	Reference Reference
+
+	// Empty list indicate the full value is used.
+	SubElement []ElementIndex
+
+	// Only applicable when reference's type is address type.  Access/modify the
+	// dereference subelement value rather than the address itself.
+	IndirectAccess bool
 }

@@ -30,15 +30,6 @@ type ObjectDefinition struct {
 	Content []byte
 }
 
-// Local variable definition
-type LocalDefinition struct {
-	Name string
-	Type Type
-
-	// Internal
-	DefUses map[*LocalReference]struct{}
-}
-
 // Logical compilation unit that forms a single object file.
 type CompilationUnit struct {
 	// The function is populated into .text.  Functions can access the function
@@ -63,4 +54,14 @@ type CompilationUnit struct {
 	// Functions can access the global variable using AddressReference which
 	// exposes the object via an address indirection.
 	VariableDefinitions []*ObjectDefinition
+}
+
+// Local variable definition
+type LocalDefinition struct {
+	Name string
+	Type Type // optional.  Type is checked/inferred during type checking
+
+	// Internal
+	Instruction Instruction
+	DefUses     map[*LocalReference]struct{}
 }

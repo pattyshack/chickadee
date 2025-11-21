@@ -29,14 +29,31 @@ type Block struct {
 	Phis map[string]*Phi
 }
 
-type Instruction interface {
-	isInstruction()
-}
-
 type Phi struct {
 	Dest *LocalDefinition
 
 	// Value is usually a variable reference, but could be constant after
 	// optimization.
 	Srcs map[*Block]Value
+}
+
+type Instruction interface {
+	isInstruction()
+
+	ParentBlock() *Block
+	SetParentBlock(*Block)
+}
+
+type instruction struct {
+	Block *Block
+}
+
+func (*instruction) isInstruction() {}
+
+func (inst *instruction) ParentBlock() *Block {
+	return inst.Block
+}
+
+func (inst *instruction) SetParentBlock(block *Block) {
+	inst.Block = block
 }
