@@ -23,6 +23,7 @@ var (
 			DataPadding:              []byte{0},
 			InitSymbol:               "_init",
 			InitEpilogue:             []byte{0xc3}, // ret instruction
+			EntryPointSymbolPrefix:   "_start_",
 			Relocator:                NewRel32Relocator(),
 		},
 		ExecutableFormat: executable.Config{

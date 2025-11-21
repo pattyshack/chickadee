@@ -31,5 +31,8 @@ type Config struct {
 	// functions.
 	InitEpilogue []byte
 
+	// Usually "_start_"
+	EntryPointSymbolPrefix string
+
 	Relocator
 }

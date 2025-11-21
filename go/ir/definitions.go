@@ -1,16 +1,55 @@
 package ir
 
-type DeclarationKind string
+type FunctionDefinition struct {
+	Name string
+	// NOTE: The declaration type must be FunctionType.
+	Type Type
 
-const (
+	// 1-to-1 mapping between parameter types and names
+	ParameterNames []string
+
+	Blocks []*Block
+
+	// A potential entry (aka main) function.  The function signature must be
+	// "func()"; the function can freely clobber all general/float registers.
+	//
+	// The compiler will generate a entry point stub in .text which sets up the
+	// stack, calls the .init section function, calls the entry function, and
+	// finally exit.
+	IsEntryFunction bool
+}
+
+// Global variable/constant definition.
+type ObjectDefinition struct {
+	Name string
+	// NOTE: The declaration type cannot not be FunctionType.
+	Type Type
+
+	// Content must either be nil or the same length as the Type's size.  If
+	// Content is nil, we'll default to all zero bytes.
+	Content []byte
+}
+
+// Local variable definition
+type LocalDefinition struct {
+	Name string
+	Type Type
+
+	// Internal
+	DefUses map[*LocalReference]struct{}
+}
+
+// Logical compilation unit that forms a single object file.
+type CompilationUnit struct {
 	// The function is populated into .text.  Functions can access the function
 	// using FunctionReference.
-	FunctionDeclaration = DeclarationKind("function declaration")
+	FunctionDefinitions []*FunctionDefinition
 
-	// The global variable's content is populated into .data (or .bss).
-	// Functions can access the global variable using AddressReference which
-	// exposes the object via an address indirection.
-	VariableDeclaration = DeclarationKind("variable declaration")
+	// When init function name is not empty, populate a function call into .init.
+	// The function signature must be "func()" and require no pre-call setup
+	// (except basic stack alignment); the function can freely clobber all
+	// general/float registers.
+	InitFunction string
 
 	// The global constant's content is populated into .rodata.  Functions can
 	// access the constant using ConstantReference which directly exposes the
@@ -18,53 +57,10 @@ const (
 	// during compilation)
 	//
 	// XXX: maybe skip writing to .rodata entirely?
-	ConstantDeclaration = DeclarationKind("constant declaration")
-)
+	ConstantDefinitions []*ObjectDefinition
 
-// Global function/variable/constant declaration.
-type GlobalDeclaration struct {
-	Kind DeclarationKind
-	Name string
-	Type Type
-}
-
-type Definition interface {
-	isDefinition()
-}
-
-type FunctionDefinition struct {
-	// NOTE: The declaration type must be FunctionType.
-	GlobalDeclaration
-
-	// 1-to-1 mapping between parameter types and names
-	ParameterNames []string
-
-	Blocks []*Block
-}
-
-func (*FunctionDefinition) isDefinition() {}
-
-// Global variable/constant definition.
-type ObjectDefinition struct {
-	// NOTE: The declaration type cannot not be FunctionType.
-	GlobalDeclaration
-
-	// Content must either be nil or the same length as the Type's size.  If
-	// Content is nil, we'll default to all zero bytes.
-	Content []byte
-}
-
-func (*ObjectDefinition) isDefinition() {}
-
-// Local variable definition
-type LocalDefinition struct {
-	Name string
-	Type Type
-
-	DefUses map[*LocalReference]struct{}
-}
-
-// Logical compilation unit that forms a single object file.
-type CompileUnit struct {
-	Definitions []Definition
+	// The global variable's content is populated into .data (or .bss).
+	// Functions can access the global variable using AddressReference which
+	// exposes the object via an address indirection.
+	VariableDefinitions []*ObjectDefinition
 }
