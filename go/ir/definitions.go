@@ -2,8 +2,7 @@ package ir
 
 type FunctionDefinition struct {
 	Name string
-	// NOTE: The declaration type must be FunctionType.
-	Type Type
+	Type *FunctionType
 
 	// 1-to-1 mapping between parameter types and names
 	ParameterNames []string
@@ -54,6 +53,14 @@ type CompilationUnit struct {
 	// Functions can access the global variable using AddressReference which
 	// exposes the object via an address indirection.
 	VariableDefinitions []*ObjectDefinition
+}
+
+type Signatures struct {
+	FunctionDeclarations map[string]*FunctionType
+
+	ConstantDefinitions map[string]*ObjectDefinition
+
+	VariableDeclarations map[string]Type
 }
 
 // Local variable definition
