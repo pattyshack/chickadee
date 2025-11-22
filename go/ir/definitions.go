@@ -59,7 +59,7 @@ type CompilationUnit struct {
 // Local variable definition
 type LocalDefinition struct {
 	Name string
-	Type Type // optional.  Type is checked/inferred during type checking
+	Type Type
 
 	// Internal
 	Instruction Instruction

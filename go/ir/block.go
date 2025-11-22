@@ -57,3 +57,13 @@ func (inst *instruction) ParentBlock() *Block {
 func (inst *instruction) SetParentBlock(block *Block) {
 	inst.Block = block
 }
+
+type ControlFlowInstruction interface {
+	Instruction
+	isControlFlow()
+}
+type controlFlowInstruction struct {
+	instruction
+}
+
+func (inst *controlFlowInstruction) isControlFlow() {}
