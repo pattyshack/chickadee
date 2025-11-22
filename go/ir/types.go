@@ -211,7 +211,7 @@ func (thisArray *ArrayType) Equals(other Type) bool {
 }
 
 func (t *ArrayType) Alignment() int {
-	return t.ElementType.Alignment()
+	return generalRegisterSize
 }
 
 func (t *ArrayType) Size() int {
@@ -240,8 +240,7 @@ type StructType struct {
 	Fields []*Field
 
 	// NOTE: (internal use only) This is not part of the type signature.
-	ComputedAlignment int
-	ComputedSize      int
+	ComputedSize int
 }
 
 func (*StructType) isTypeExpression() {}
@@ -267,34 +266,24 @@ func (thisStruct *StructType) Equals(other Type) bool {
 }
 
 func (t *StructType) Alignment() int {
-	if t.ComputedAlignment == 0 {
-		t.computeSizeAndAlignment()
-	}
-	return t.ComputedAlignment
+	return generalRegisterSize
 }
 
 func (t *StructType) Size() int {
 	if t.ComputedSize == 0 {
-		t.computeSizeAndAlignment()
+		t.computeSize()
 	}
 	return t.ComputedSize
 }
 
-func (t *StructType) computeSizeAndAlignment() {
-	t.ComputedAlignment = 0
+func (t *StructType) computeSize() {
 	t.ComputedSize = 0
 	for _, field := range t.Fields {
-		alignment := field.Type.Alignment()
-		if alignment > t.ComputedAlignment {
-			t.ComputedAlignment = alignment
-		}
-
-		t.addAlignmentPadding(alignment)
+		t.addAlignmentPadding(field.Type.Alignment())
 		field.ComputedOffset = t.ComputedSize
 		t.ComputedSize += field.Type.Size()
 	}
 
-	t.addAlignmentPadding(t.ComputedAlignment)
 	t.ComputedSize = roundUpLastChunk(t.ComputedSize)
 }
 
