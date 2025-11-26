@@ -6,7 +6,52 @@ import (
 	"github.com/pattyshack/chickadee/platform/layout"
 )
 
+// <general dest> = <general src>
+//
+// https://www.felixcloutier.com/x86/mov
+//
+// NOTE: we'll use 32-bit variant when possible.
+//
+// 8/16/32/64-bit (RM Op/En): 8B /r (32/64-bit variants)
+func copyGeneral(
+	builder *layout.SegmentBuilder,
+	dest *architecture.Register,
+	srcSize int,
+	src *architecture.Register,
+) {
+	if src.Encoding == dest.Encoding { // no-op
+		return
+	}
+
+	if srcSize != 8 {
+		srcSize = 4
+	}
+
+	rmInstruction(builder, false, srcSize, []byte{0x8B}, dest, src)
+}
+
+// <float dest> = <float src>
+//
+// https://www.felixcloutier.com/x86/movss
+// https://www.felixcloutier.com/x86/movsd
+//
+// 32/64-bit (A Op/En): 0F 10 /r
+func copyFloat(
+	builder *layout.SegmentBuilder,
+	dest *architecture.Register,
+	srcSize int,
+	src *architecture.Register,
+) {
+	if src.Encoding == dest.Encoding { // no-op
+		return
+	}
+
+	rmInstruction(builder, true, srcSize, []byte{0x0F, 0x10}, dest, src)
+}
+
 // <int/float dest> = <int/float immediate>
+//
+// NOTE: This operates only on general registers
 //
 // https://www.felixcloutier.com/x86/mov
 //
@@ -31,37 +76,17 @@ func setImmediate(
 
 // <extended int/uint dest> = <int/uint src>
 //
-// https://www.felixcloutier.com/x86/mov
-// https://www.felixcloutier.com/x86/movzx
-// https://www.felixcloutier.com/x86/movsx:movsxd (int)
-//
-// NOTE: we'll use 32-bit variant when possible.
-//
-// NOTE: the upper 32 bits are automatically zero-ed when a 32-bit operand
-// instruction is used (see Intel manual, Volume 1, Section 3.4.1.1
-// General-Purpose Registers in 64-Bit Mode).
-//
-// uint8 -> uint16/uint32/uint64: movzx <dest>, <src> ; 0F B6 /r
-// uint16 -> uint32/uint64:       movzx <dest>, <src> ; 0F B7 /r
-// uint32 -> uint64:              mov <dest>, <src>   ; 8B /r (r32 -> r/m32)
-//
-// int8 -> int16/int32: movsx <dest>, <src> ; 0F BE /r
-// int8 -> int64:       movsx <dest>, <src> ; REX.W + 0F BE /r
-//
-// int16 -> int32: movsx <dest>, <src> ; 0F BF /r
-// int16 -> int64: movsx <dest>, <src> ; REX.W + 0F BF /r
-//
-// int32 -> int64: movsxd <dest>, <src> ; REX.W + 63 /r
+// See _extendUnsignedInt and _extendSignedInt documentation.
 func extendInt(
 	builder *layout.SegmentBuilder,
 	destSize int,
 	dest *architecture.Register,
-	srcSimpleType ir.Type,
+	srcType ir.Type,
 	src *architecture.Register,
 ) {
 	extend := _extendUnsignedInt
 	srcSize := 0
-	switch size := srcSimpleType.(type) {
+	switch size := srcType.(type) {
 	case ir.UnsignedIntType:
 		srcSize = int(size)
 	case ir.SignedIntType:
@@ -105,6 +130,8 @@ func _extendUnsignedInt(
 	case 2:
 		opCode = []byte{0x0F, 0xB7}
 	case 4:
+		// NOTE: even when dest == src, we need to explicitly "mov" to zero the
+		// upper bytes.
 		opCode = []byte{0x8B}
 	default:
 		panic("should never happen")

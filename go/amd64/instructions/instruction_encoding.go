@@ -26,6 +26,9 @@ func modRMInstruction(
 	builder *layout.SegmentBuilder,
 	isFloat bool,
 	operandSize int,
+	// baseRex is normally rexPrefix, rexPrefix|rexWBit for float<->int64
+	// conversion
+	baseRex byte,
 	opCode []byte,
 	modRMMode int,
 	regXReg int, // either 1. X.Reg, or 2. /0 - /7 op code extension
@@ -36,7 +39,7 @@ func modRMInstruction(
 	instruction := make([]byte, 0, len(opCode)+3+len(immediate))
 
 	requireRex := false
-	rex := rexPrefix
+	rex := baseRex
 	if isFloat {
 		switch operandSize {
 		case 4:
@@ -109,6 +112,7 @@ func rmInstruction(
 		builder,
 		isFloat,
 		operandSize,
+		rexPrefix,
 		opCode,
 		directModRMMode,
 		reg.Encoding,
@@ -134,6 +138,7 @@ func mInstruction(
 		builder,
 		false, // isFloat
 		operandSize,
+		rexPrefix,
 		opCode,
 		directModRMMode,
 		opCodeExtension,
@@ -189,6 +194,7 @@ func miInstruction(
 		builder,
 		false, // isFloat
 		operandSize,
+		rexPrefix,
 		opCode,
 		directModRMMode,
 		opCodeExtension,
@@ -219,6 +225,7 @@ func mi8Instruction(
 		builder,
 		false, // isFloat
 		operandSize,
+		rexPrefix,
 		opCode,
 		directModRMMode,
 		opCodeExtension,
@@ -260,6 +267,7 @@ func rmiInstruction(
 		builder,
 		false, // isFloat
 		operandSize,
+		rexPrefix,
 		opCode,
 		directModRMMode,
 		reg.Encoding,
