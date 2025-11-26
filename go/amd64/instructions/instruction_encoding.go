@@ -13,7 +13,7 @@ import (
 // instructions will only use register-direct addressing mode
 
 const (
-	int16OperandPrefix   = 0x66
+	int16OperandPrefix   = 0x66 // aka operand size prefix in intel manual
 	float32OperandPrefix = 0xf3
 	float64OperandPrefix = 0xf2
 	rexPrefix            = byte(0x40)
@@ -330,4 +330,34 @@ func oiInstruction(
 	instruction = append(instruction, immediate...)
 
 	builder.AppendBasicData(instruction)
+}
+
+// Instruction of the form:
+//
+// (general) D Op/En: <op code> <rel32>
+func d32Instruction(
+	builder *layout.SegmentBuilder,
+	opCode []byte,
+	kind layout.SymbolKind,
+	symbol string,
+) {
+	bytes := make([]byte, len(opCode)+4)
+	copy(bytes, opCode)
+
+	entry := &layout.Relocation{
+		Name:   symbol,
+		Offset: int64(len(opCode)),
+	}
+
+	relocations := layout.Relocations{}
+	switch kind {
+	case layout.BasicBlockKind:
+		relocations.Labels = []*layout.Relocation{entry}
+	case layout.FunctionKind, layout.ObjectKind:
+		relocations.Symbols = []*layout.Relocation{entry}
+	default:
+		panic("unsupported symbol kind " + kind)
+	}
+
+	builder.AppendData(bytes, layout.Definitions{}, relocations)
 }
