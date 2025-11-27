@@ -1,6 +1,7 @@
 package layout
 
-type Config struct {
+// OS independent architecture config
+type ArchitectureConfig struct {
 	// On Finalize, merge content whenever the accumulated size is larger than
 	// the threshold.
 	MergeContentThreshold int64
@@ -11,6 +12,13 @@ type Config struct {
 
 	// 4KB on most architectures
 	MemoryPageSize int64
+
+	Relocator
+}
+
+// OS/architecture dependent config
+type Config struct {
+	Architecture ArchitectureConfig
 
 	// Page(s) prior to the start page is reserved for executable file format's
 	// metadata
@@ -33,6 +41,4 @@ type Config struct {
 
 	// Usually "_start_"
 	EntryPointSymbolPrefix string
-
-	Relocator
 }

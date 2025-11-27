@@ -133,7 +133,12 @@ func (builder *SegmentBuilder) AppendBasicData(data []byte) {
 	builder.AppendData(data, Definitions{}, Relocations{})
 }
 
-func (builder *SegmentBuilder) Finalize(config Config) (Segment, error) {
+func (builder *SegmentBuilder) Finalize(
+	config ArchitectureConfig,
+) (
+	Segment,
+	error,
+) {
 	defs, labels, symbols, err := MergeDefinitions(builder.Segments...)
 	if err != nil {
 		return Segment{}, err
@@ -257,25 +262,25 @@ func (builder *ObjectFileBuilder) Finalize(
 ) {
 	file := ObjectFile{}
 
-	text, err := builder.Text.Finalize(config)
+	text, err := builder.Text.Finalize(config.Architecture)
 	if err != nil {
 		return ObjectFile{}, err
 	}
 	file.Text = text
 
-	init, err := builder.Init.Finalize(config)
+	init, err := builder.Init.Finalize(config.Architecture)
 	if err != nil {
 		return ObjectFile{}, err
 	}
 	file.Init = init
 
-	readOnlyData, err := builder.ReadOnlyData.Finalize(config)
+	readOnlyData, err := builder.ReadOnlyData.Finalize(config.Architecture)
 	if err != nil {
 		return ObjectFile{}, err
 	}
 	file.ReadOnlyData = readOnlyData
 
-	data, err := builder.Data.Finalize(config)
+	data, err := builder.Data.Finalize(config.Architecture)
 	if err != nil {
 		return ObjectFile{}, err
 	}
@@ -307,8 +312,8 @@ func (file ObjectFile) ToExecutableImage(
 	ExecutableImage,
 	error,
 ) {
-	pageSize := config.MemoryPageSize
-	alignment := config.RegisterAlignment
+	pageSize := config.Architecture.MemoryPageSize
+	alignment := config.Architecture.RegisterAlignment
 	if pageSize%alignment != 0 {
 		return ExecutableImage{}, fmt.Errorf(
 			"memory page size (%d) not multiples of section alignment (%d)",
@@ -351,7 +356,7 @@ func (file ObjectFile) ToExecutableImage(
 		return ExecutableImage{}, err
 	}
 
-	file.BSS.Pad(config.RegisterAlignment)
+	file.BSS.Pad(config.Architecture.RegisterAlignment)
 
 	image := ExecutableImage{
 		MemoryPageSize:    pageSize,
@@ -417,7 +422,7 @@ func (file ObjectFile) ToExecutableImage(
 	}
 	image.EntryPoint = start.Offset
 
-	err = Link(&image, labels, symbols, config.Relocator)
+	err = Link(&image, labels, symbols, config.Architecture.Relocator)
 	if err != nil {
 		return ExecutableImage{}, err
 	}

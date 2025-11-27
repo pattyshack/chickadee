@@ -10,15 +10,17 @@ import (
 
 var (
 	testConfig = Config{
-		MergeContentThreshold:    20,
-		RegisterAlignment:        5,
-		MemoryPageSize:           10,
+		Architecture: ArchitectureConfig{
+			MergeContentThreshold: 20,
+			RegisterAlignment:     5,
+			MemoryPageSize:        10,
+			Relocator:             newTestRelocator(),
+		},
 		ExecutableImageStartPage: 1,
 		InstructionPadding:       []byte("!"),
 		DataPadding:              []byte("#"),
 		InitSymbol:               "initFunc",
 		InitEpilogue:             []byte("(init_end)"),
-		Relocator:                newTestRelocator(),
 	}
 )
 
@@ -176,7 +178,7 @@ func (LayoutSuite) TestLinkBasicBlocks(t *testing.T) {
 			},
 		})
 
-	segment, err := builder.Finalize(testConfig)
+	segment, err := builder.Finalize(testConfig.Architecture)
 	expect.Nil(t, err)
 
 	expect.Equal(
@@ -323,7 +325,7 @@ func (LayoutSuite) TestLinkFunctions(t *testing.T) {
 			},
 		})
 
-	segment, err := builder.Finalize(testConfig)
+	segment, err := builder.Finalize(testConfig.Architecture)
 	expect.Nil(t, err)
 
 	expect.Equal(
@@ -453,7 +455,7 @@ func (LayoutSuite) TestLinkGlobalObjects(t *testing.T) {
 		},
 		Relocations{})
 
-	segment, err := builder.Finalize(testConfig)
+	segment, err := builder.Finalize(testConfig.Architecture)
 	expect.Nil(t, err)
 
 	expect.Equal(

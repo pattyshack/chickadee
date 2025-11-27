@@ -337,8 +337,7 @@ func convertUint64ToFloat(
 		},
 		layout.Relocations{})
 
-	// TODO: stop hardcoding amd64.Linux.Layout
-	segment, err := instructions.Finalize(amd64.Linux.Layout)
+	segment, err := instructions.Finalize(amd64.ArchitectureLayout)
 	if err != nil {
 		panic(err)
 	}

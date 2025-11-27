@@ -8,6 +8,13 @@ import (
 )
 
 var (
+	ArchitectureLayout = layout.ArchitectureConfig{
+		MergeContentThreshold: 1024 * 1024, // 1 MB (arbitrary choice)
+		RegisterAlignment:     16,          // SSE2 xmm registers
+		MemoryPageSize:        4096,
+		Relocator:             NewRel32Relocator(),
+	}
+
 	Linux = platform.Config{
 		OperatingSystem: platform.Linux,
 		Architecture: architecture.Config{
@@ -15,16 +22,13 @@ var (
 			RegisterSet: registerSet,
 		},
 		Layout: layout.Config{
-			MergeContentThreshold:    1024 * 1024, // 1 MB (arbitrary choice)
-			RegisterAlignment:        16,          // SSE2 xmm registers
-			MemoryPageSize:           4096,
+			Architecture:             ArchitectureLayout,
 			ExecutableImageStartPage: 1,
 			InstructionPadding:       []byte{0xcc}, // int3 instruction
 			DataPadding:              []byte{0},
 			InitSymbol:               "_init",
 			InitEpilogue:             []byte{0xc3}, // ret instruction
 			EntryPointSymbolPrefix:   "_start_",
-			Relocator:                NewRel32Relocator(),
 		},
 		ExecutableFormat: executable.Config{
 			VirtualAddressStart:    0x400000,
