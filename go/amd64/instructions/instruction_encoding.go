@@ -19,7 +19,9 @@ const (
 	rexPrefix            = byte(0x40)
 	rexWBit              = byte(0x08) // int 64 operand
 
-	directModRMMode = 0xc0
+	indirectDisp0ModRMMode = 0b00000000 // [r/m] or [SIB]
+	indirectDisp8ModRMMode = 0b01000000 // [r/m + disp8]
+	directModRMMode        = 0b11000000
 )
 
 func modRMInstruction(
@@ -33,10 +35,10 @@ func modRMInstruction(
 	modRMMode int,
 	regXReg int, // either 1. X.Reg, or 2. /0 - /7 op code extension
 	rmXReg int, // always X.Reg
-	immediate []byte, // nil / ib (1 byte) / iw (2 bytes) / id (4 bytes)
+	immediateOrSib []byte, // nil / ib|iw|id|io (1|2|4|8 byte) / sib
 ) {
 	// +3 for 16-bit/float prefix, rex prefix, and modRM suffix
-	instruction := make([]byte, 0, len(opCode)+3+len(immediate))
+	instruction := make([]byte, 0, len(opCode)+3+len(immediateOrSib))
 
 	requireRex := false
 	rex := baseRex
@@ -81,7 +83,7 @@ func modRMInstruction(
 	instruction = append(instruction, opCode...)
 	instruction = append(instruction, byte(modRMMode|modRMReg|modRMRm))
 
-	instruction = append(instruction, immediate...)
+	instruction = append(instruction, immediateOrSib...)
 
 	builder.AppendBasicData(instruction)
 }
@@ -118,6 +120,89 @@ func rmInstruction(
 		reg.Encoding,
 		rm.Encoding,
 		nil)
+}
+
+// indirect addressing ModRM instruction of the form:
+//
+// (general) RM Op/En: <opCode> <ModRM:reg (r, w)>, [<ModRM:r/m (r)>]
+// (general) MR Op/En: <opCode> [<ModRM:r/m (r, w)>], <ModRM:reg (r)>
+// (SSE2) A Op/En: <opCode> <ModRM:reg (r, w)>, [<ModRM:r/m (r)>]
+// (SSE2) B Op/En: <opCode> [<ModRM:r/m (r, w)>], <ModRM:reg (r)>
+func indirectModRMInstruction(
+	builder *layout.SegmentBuilder,
+	isFloat bool,
+	operandSize int,
+	opCode []byte,
+	reg *architecture.Register,
+	rm *architecture.Register, // address
+) {
+	rex := rexPrefix
+	if isFloat {
+		if !reg.AllowFloatOperations {
+			panic("invalid register")
+		}
+
+		switch operandSize {
+		case 4:
+		case 8:
+			rex |= rexWBit
+		default:
+			panic(fmt.Sprintf("unsupported size: %d", operandSize))
+		}
+
+		// float mov uses int16 (operand size prefixed) encoding
+		operandSize = 2
+	} else {
+		if !reg.AllowGeneralOperations {
+			panic("invalid register")
+		}
+	}
+
+	if !rm.AllowGeneralOperations {
+		panic("invalid register")
+	}
+
+	rexRmX := rm.Encoding & 0x08
+	modRMRm := rm.Encoding & 0x07
+
+	addressMode := indirectDisp0ModRMMode
+	var immediateOrSib []byte
+
+	switch modRMRm {
+	case 4: // either rsp or r12
+		// NOTE: we must use an alternative encoding for rsp/r12 since the default
+		// encoding refers to [SIB] rather than [r/m].
+
+		// SIB byte = (SIB.scale, SIB.index, SIB.base) where
+		//
+		// SIB.scale = 00 (factor s = 1)
+		//  - We can use any scale factor since it's ignore
+		//
+		// SIB.index = 0.100 (rsp)
+		//  - rsp index mode ignores index and scale: i.e., address = [base]
+		//
+		// SIB.base = <rexRMX>.100 (either rsp or r12)
+		//  - the upper bit is in REX.B
+		immediateOrSib = []byte{0x24}
+
+	case 5: // either rbp or r13
+		// NOTE: we must use an alternative encoding for rbp/r13 since the default
+		// encoding refers to [RIP + disp32] rather than [r/m].
+
+		addressMode = indirectDisp8ModRMMode // use [<r/m> + disp8] encoding
+		immediateOrSib = []byte{0}           // immediate
+	}
+
+	modRMInstruction(
+		builder,
+		false,
+		operandSize,
+		rex,
+		opCode,
+		addressMode,
+		reg.Encoding,
+		rexRmX|modRMRm,
+		immediateOrSib)
 }
 
 // Register-direct addressing ModRM instruction of the form:

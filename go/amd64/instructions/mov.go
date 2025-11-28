@@ -30,6 +30,46 @@ func copyGeneral(
 	rmInstruction(builder, false, srcSize, []byte{0x8B}, dest, src)
 }
 
+// [<address>] = <general src>
+//
+// https://www.felixcloutier.com/x86/mov
+//
+// 8-bit (MR Op/En):        88 /r
+// 16/32/64-bit (MR Op/En): 89 /r
+func copyGeneralToMemory(
+	builder *layout.SegmentBuilder,
+	destAddress *architecture.Register,
+	srcSize int,
+	src *architecture.Register,
+) {
+	opCode := []byte{0x89}
+	if srcSize == 1 {
+		opCode = []byte{0x88}
+	}
+
+	indirectModRMInstruction(builder, false, srcSize, opCode, src, destAddress)
+}
+
+// <general dest> = [<address>]
+//
+// https://www.felixcloutier.com/x86/mov
+//
+// 8-bit (RM Op/En):        8A /r
+// 16/32/64-bit (RM Op/En): 8B /r
+func copyMemoryToGeneral(
+	builder *layout.SegmentBuilder,
+	dest *architecture.Register,
+	srcSize int,
+	srcAddress *architecture.Register,
+) {
+	opCode := []byte{0x8B}
+	if srcSize == 1 {
+		opCode = []byte{0x8A}
+	}
+
+	indirectModRMInstruction(builder, false, srcSize, opCode, dest, srcAddress)
+}
+
 // <float dest> = <float src>
 //
 // https://www.felixcloutier.com/x86/movss
@@ -47,6 +87,114 @@ func copyFloat(
 	}
 
 	rmInstruction(builder, true, srcSize, []byte{0x0F, 0x10}, dest, src)
+}
+
+// [<address>] = <float src>
+//
+// https://www.felixcloutier.com/x86/movd:movq
+//
+// 32-bit (B Op/En): 66 0F 7E /r
+// 64-bit (B Op/En): 66 REX.W OF 7E /r
+func copyFloatToMemory(
+	builder *layout.SegmentBuilder,
+	destAddress *architecture.Register,
+	srcSize int,
+	src *architecture.Register,
+) {
+	indirectModRMInstruction(
+		builder,
+		true,
+		srcSize,
+		[]byte{0x0F, 0x7E},
+		src,
+		destAddress)
+}
+
+// <float dest> = [<address>]
+//
+// https://www.felixcloutier.com/x86/movd:movq
+//
+// 32-bit (A Op/En): 66 0F 6E /r
+// 64-bit (A Op/En): 66 REX.W OF 6E /r
+func copyMemoryToFloat(
+	builder *layout.SegmentBuilder,
+	dest *architecture.Register,
+	srcSize int,
+	srcAddress *architecture.Register,
+) {
+	indirectModRMInstruction(
+		builder,
+		true,
+		srcSize,
+		[]byte{0x0F, 0x6E},
+		dest,
+		srcAddress)
+}
+
+// <general dest> = <float src>
+//
+// https://www.felixcloutier.com/x86/movd:movq
+//
+// NOTE: we'll use 32-bit variant when possible.
+//
+// 8/16/32-bit src (B Op/En): 66 0F 7E /r
+// 64-bit src (B Op/En):      66 REX.W 0F 7E /r
+func copyFloatToGeneral(
+	builder *layout.SegmentBuilder,
+	dest *architecture.Register,
+	srcSize int,
+	src *architecture.Register,
+) {
+	baseRex := rexPrefix // 32-bit variant
+	if srcSize == 8 {
+		baseRex |= rexWBit // 64-bit variant
+	}
+
+	// NOTE: this uses int16 style (operand size prefixed) MR Op/En (src before
+	// dest) encoding.
+	modRMInstruction(
+		builder,
+		false,
+		2,
+		baseRex,
+		[]byte{0x0F, 0x7E},
+		directModRMMode,
+		src.Encoding,
+		dest.Encoding,
+		nil) // immediate
+}
+
+// <float dest> = <general src>
+//
+// https://www.felixcloutier.com/x86/movd:movq
+//
+// NOTE: we'll use 32-bit variant when possible
+//
+// 8/16/32-bit src (A Op/En): 66 0F 6E /r
+// 64-bit src (A Op/En):      66 REX.W 0F 6E /r
+func copyGeneralToFloat(
+	builder *layout.SegmentBuilder,
+	dest *architecture.Register,
+	srcSize int,
+	src *architecture.Register,
+) {
+	baseRex := rexPrefix // 32-bit variant
+	if srcSize == 8 {
+		baseRex |= rexWBit // 64-bit variant
+	}
+
+	// NOTE: this uses int16 style (operand size prefixed) RM Op/En (dest before
+	// src) encoding.
+	modRMInstruction(
+		builder,
+		false,
+		2,
+		baseRex,
+		[]byte{0x0F, 0x6E},
+		directModRMMode,
+		dest.Encoding,
+		src.Encoding,
+		nil) // immediate
 }
 
 // <int/float dest> = <int/float immediate>
