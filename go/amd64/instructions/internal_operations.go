@@ -43,7 +43,7 @@ func computeSymbolAddress(
 
 	// The displacement bytes, to be relocated.
 	builder.AppendData(
-		[]byte{0, 0, 0, 0},
+		[]byte{0, 0, 0, 0},  // XXX: maybe support addend?
 		layout.Definitions{},
 		layout.Relocations{
 			Symbols: []*layout.Relocation{
@@ -103,4 +103,59 @@ func computeStackAddress(
 		dest.Encoding,
 		amd64.RspEncoding,
 		sibAndImmediate)
+}
+
+// <RSP> += <int immediate>
+//
+// https://www.felixcloutier.com/x86/add
+//
+// NOTE: immediate is sign extended for 64-bit operand.
+//
+// 64-bit (MI Op/En): 81 /0 id
+func _updateStack(
+	builder *layout.SegmentBuilder,
+	size int32,
+) {
+	if size == 0 {
+		return
+	}
+
+	immediate := make([]byte, 4)
+	_, err := binary.Encode(immediate, binary.LittleEndian, size)
+	if err != nil {
+		panic(err)
+	}
+
+	modRMInstruction(
+		builder,
+		false, // isFloat
+		8,     // address size
+		rexPrefix,
+		[]byte{81},
+		directModRMMode,
+		0, // op code extension
+		amd64.RspEncoding,
+		immediate)
+}
+
+func allocateStackFrame(
+	builder *layout.SegmentBuilder,
+	size int32,
+) {
+	if size < 0 {
+		panic("invalid stack frame size")
+	}
+
+	_updateStack(builder, size)
+}
+
+func deallocateStackFrame(
+	builder *layout.SegmentBuilder,
+	size int32,
+) {
+	if size < 0 {
+		panic("invalid stack frame size")
+	}
+
+	_updateStack(builder, -size)
 }
