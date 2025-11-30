@@ -4,6 +4,10 @@ import (
 	"github.com/pattyshack/chickadee/platform/architecture"
 )
 
+const (
+	RspEncoding = 4
+)
+
 // Reference: https://wiki.osdev.org/X86-64_Instruction_Encoding#Registers
 var (
 	Rax = architecture.NewGeneralRegister("rax", 0)

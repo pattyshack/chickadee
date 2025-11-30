@@ -11,6 +11,8 @@ import (
 //
 // - Data loading/storing are handled by distinct mov instructions.  All other
 // instructions will only use register-direct addressing mode
+// - Address must be loaded into register before use.  We won't mix address
+// computation with other operations.
 
 const (
 	int16OperandPrefix   = 0x66 // aka operand size prefix in intel manual
@@ -19,9 +21,11 @@ const (
 	rexPrefix            = byte(0x40)
 	rexWBit              = byte(0x08) // int 64 operand
 
-	indirectDisp0ModRMMode = 0b00000000 // [r/m] or [SIB]
-	indirectDisp8ModRMMode = 0b01000000 // [r/m + disp8]
-	directModRMMode        = 0b11000000
+	// encoding = (mode, reg, r/m)
+	indirectDisp0ModRMMode  = 0b00_000_000 // [r/m] or [SIB]
+	indirectDisp8ModRMMode  = 0b01_000_000 // [r/m + disp8]
+	indirectDisp32ModRMMode = 0b10_000_000 // [r/m + disp32]
+	directModRMMode         = 0b11_000_000
 )
 
 func modRMInstruction(
@@ -183,7 +187,7 @@ func indirectModRMInstruction(
 		//
 		// SIB.base = <rexRMX>.100 (either rsp or r12)
 		//  - the upper bit is in REX.B
-		immediateOrSib = []byte{0x24}
+		immediateOrSib = []byte{0b00_100_100}
 
 	case 5: // either rbp or r13
 		// NOTE: we must use an alternative encoding for rbp/r13 since the default

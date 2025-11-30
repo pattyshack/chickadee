@@ -12,8 +12,10 @@ import (
 // https://www.felixcloutier.com/x86/addss
 // https://www.felixcloutier.com/x86/addsd
 //
-// int 8-bit (RM Op/En):        02 /r
-// int 16/32/64-bit (RM Op/En): 03 /r
+// NOTE: we'll use 32-bit int variant when possible.  This is safe since
+// we do not make use of the carry/overflow status flags.
+//
+// int 8/16/32/64-bit (RM Op/En): 03 /r (32/64 variants)
 // float 32/64-bit (A Op/En):   0F 58 /r
 //
 // TODO: test 3-address code form via LEA (0x8d)
@@ -39,8 +41,8 @@ func add(
 		panic("should never happen")
 	}
 
-	if !isFloat && operandSize == 1 {
-		opCode = []byte{0x02}
+	if !isFloat && operandSize < 4 {
+		operandSize = 4
 	}
 
 	rmInstruction(builder, isFloat, operandSize, opCode, dest, src)
