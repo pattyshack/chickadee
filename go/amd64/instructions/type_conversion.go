@@ -1,7 +1,7 @@
 package instructions
 
 import (
-	"github.com/pattyshack/chickadee/amd64"
+	amd64 "github.com/pattyshack/chickadee/amd64/layout"
 	"github.com/pattyshack/chickadee/ir"
 	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"

@@ -22,9 +22,14 @@ func computeSymbolAddress(
 	builder *layout.SegmentBuilder,
 	dest *architecture.Register,
 	symbolName string,
+	offset int32, // sub element offset
 ) {
 	if !dest.AllowGeneralOperations {
 		panic("invalid register")
+	}
+
+	if offset < 0 {
+		panic("invalid offset")
 	}
 
 	// NOTE: We need to use indirectDisp0ModRMMode (00) and set r/m to rbp in
@@ -41,9 +46,15 @@ func computeSymbolAddress(
 		registers.Rbp.Encoding,
 		nil)
 
+	displacement := make([]byte, 4)
+	_, err := binary.Encode(displacement, binary.LittleEndian, offset)
+	if err != nil {
+		panic(err)
+	}
+
 	// The displacement bytes, to be relocated.
 	builder.AppendData(
-		[]byte{0, 0, 0, 0},  // XXX: maybe support addend?
+		displacement,
 		layout.Definitions{},
 		layout.Relocations{
 			Symbols: []*layout.Relocation{

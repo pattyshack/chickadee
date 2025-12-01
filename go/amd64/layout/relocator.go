@@ -1,4 +1,4 @@
-package amd64
+package layout
 
 import (
 	"encoding/binary"
@@ -10,7 +10,7 @@ import (
 
 type Rel32Relocator struct{}
 
-func NewRel32Relocator() layout.Relocator {
+func NewRelocator() layout.Relocator {
 	return Rel32Relocator{}
 }
 
@@ -23,12 +23,18 @@ func (Rel32Relocator) Relocate(
 		return fmt.Errorf("invalid rel32 relocation. not enough bytes in snippet")
 	}
 
-	delta := symbol.Offset - (startOffset + 4)
+	displacement := int32(0)
+	n, err := binary.Decode(snippet, binary.LittleEndian, &displacement)
+	if err != nil || n != 4 {
+		panic("should never happen")
+	}
+
+	delta := symbol.Offset - (startOffset + 4) + int64(displacement)
 	if delta < math.MinInt32 || math.MaxInt32 < delta {
 		return fmt.Errorf("invalid rel32 relocation. delta overflow (%d)", delta)
 	}
 
-	n, err := binary.Encode(snippet, binary.LittleEndian, int32(delta))
+	n, err = binary.Encode(snippet, binary.LittleEndian, int32(delta))
 	if err != nil || n != 4 {
 		panic("should never happen")
 	}
