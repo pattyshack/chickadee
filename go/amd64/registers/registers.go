@@ -1,4 +1,4 @@
-package amd64
+package registers
 
 import (
 	"github.com/pattyshack/chickadee/platform/architecture"
@@ -44,7 +44,7 @@ var (
 	Xmm14 = architecture.NewFloatRegister("xmm14", 14)
 	Xmm15 = architecture.NewFloatRegister("xmm15", 15)
 
-	registerSet = architecture.NewRegisterSet(
+	Registers = architecture.NewRegisterSet(
 		Rax, Rbx, Rcx, Rdx, Rbp, Rsi, Rdi, R8, R9, R10, R11, R12, R13, R14, R15,
 		Xmm0, Xmm1, Xmm2, Xmm3, Xmm4, Xmm5, Xmm6, Xmm7,
 		Xmm8, Xmm9, Xmm10, Xmm11, Xmm12, Xmm13, Xmm14, Xmm15)

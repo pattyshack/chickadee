@@ -1,7 +1,7 @@
 package instructions
 
 import (
-	"github.com/pattyshack/chickadee/amd64"
+	"github.com/pattyshack/chickadee/amd64/registers"
 	"github.com/pattyshack/chickadee/ir"
 	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
@@ -55,29 +55,29 @@ func divRemInt(
 	simpleType ir.Type,
 	divisor *architecture.Register,
 ) {
-	if divisor == amd64.Rdx {
+	if divisor == registers.Rdx {
 		panic("cannot use rdx as divisor")
 	}
 
 	switch size := simpleType.(type) {
 	case ir.UnsignedIntType:
 		if size == 1 {
-			extendInt(builder, 4, amd64.Rax, size, amd64.Rax)
-			if divisor != amd64.Rax {
+			extendInt(builder, 4, registers.Rax, size, registers.Rax)
+			if divisor != registers.Rax {
 				extendInt(builder, 4, divisor, size, divisor)
 			}
 			size = 4
 		}
 
-		xor(builder, size, amd64.Rdx, amd64.Rdx)
+		xor(builder, size, registers.Rdx, registers.Rdx)
 
 		// div
 		mInstruction(builder, int(size), []byte{0xF7}, 6, divisor)
 
 	case ir.SignedIntType:
 		if size == 1 {
-			extendInt(builder, 4, amd64.Rax, size, amd64.Rax)
-			if divisor != amd64.Rax {
+			extendInt(builder, 4, registers.Rax, size, registers.Rax)
+			if divisor != registers.Rax {
 				extendInt(builder, 4, divisor, size, divisor)
 			}
 			size = 4

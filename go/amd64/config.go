@@ -1,6 +1,7 @@
 package amd64
 
 import (
+	"github.com/pattyshack/chickadee/amd64/registers"
 	"github.com/pattyshack/chickadee/platform"
 	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
@@ -19,7 +20,7 @@ var (
 		OperatingSystem: platform.Linux,
 		Architecture: architecture.Config{
 			Name:        "amd64",
-			RegisterSet: registerSet,
+			RegisterSet: registers.Registers,
 		},
 		Layout: layout.Config{
 			Architecture:             ArchitectureLayout,

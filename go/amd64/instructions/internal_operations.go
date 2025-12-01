@@ -6,7 +6,7 @@ package instructions
 import (
 	"encoding/binary"
 
-	"github.com/pattyshack/chickadee/amd64"
+	"github.com/pattyshack/chickadee/amd64/registers"
 	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
 )
@@ -38,7 +38,7 @@ func computeSymbolAddress(
 		[]byte{0x8D},
 		indirectDisp0ModRMMode,
 		dest.Encoding,
-		amd64.Rbp.Encoding,
+		registers.Rbp.Encoding,
 		nil)
 
 	// The displacement bytes, to be relocated.
@@ -101,7 +101,7 @@ func computeStackAddress(
 		[]byte{0x8D},
 		indirectDisp32ModRMMode,
 		dest.Encoding,
-		amd64.RspEncoding,
+		registers.RspEncoding,
 		sibAndImmediate)
 }
 
@@ -134,7 +134,7 @@ func _updateStack(
 		[]byte{81},
 		directModRMMode,
 		0, // op code extension
-		amd64.RspEncoding,
+		registers.RspEncoding,
 		immediate)
 }
 
