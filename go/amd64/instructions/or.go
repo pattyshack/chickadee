@@ -53,11 +53,13 @@ func orIntImmediate(
 	dest *architecture.Register,
 	immediate []byte,
 ) {
+	isUnsigned := true
 	operandSize := 0
 	switch size := simpleType.(type) {
 	case ir.SignedIntType:
 		operandSize = int(size)
 	case ir.UnsignedIntType:
+		isUnsigned = false
 		operandSize = int(size)
 	default:
 		panic("should never happen")
@@ -68,5 +70,5 @@ func orIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, operandSize, opCode, 1, dest, immediate)
+	miInstruction(builder, isUnsigned, operandSize, opCode, 1, dest, immediate)
 }

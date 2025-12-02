@@ -159,6 +159,7 @@ func copyFloatToGeneral(
 		baseRex,
 		[]byte{0x0F, 0x7E},
 		directModRMMode,
+		false, // is op code extension
 		src.Encoding,
 		dest.Encoding,
 		nil) // immediate
@@ -192,6 +193,7 @@ func copyGeneralToFloat(
 		baseRex,
 		[]byte{0x0F, 0x6E},
 		directModRMMode,
+		false, // is op code extension
 		dest.Encoding,
 		src.Encoding,
 		nil) // immediate

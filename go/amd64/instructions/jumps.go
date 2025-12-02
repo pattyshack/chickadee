@@ -75,6 +75,7 @@ func compare(
 		rexPrefix,
 		[]byte{0x0F, 0x2F},
 		directModRMMode,
+		false, // is op code extension
 		src1.Encoding,
 		src2.Encoding,
 		nil) // immediate
@@ -98,11 +99,13 @@ func compareIntImmediate(
 	src *architecture.Register,
 	immediate []byte,
 ) {
+	isUnsigned := false
 	operandSize := 0
 	switch size := compareType.(type) {
 	case ir.SignedIntType:
 		operandSize = int(size)
 	case ir.UnsignedIntType:
+		isUnsigned = true
 		operandSize = int(size)
 	default:
 		panic("should never happen")
@@ -113,7 +116,7 @@ func compareIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, operandSize, opCode, 7, src, immediate)
+	miInstruction(builder, isUnsigned, operandSize, opCode, 7, src, immediate)
 }
 
 // je <label> <int/uint/float src1> <int/uint/float src2>

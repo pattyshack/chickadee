@@ -42,6 +42,7 @@ func computeSymbolAddress(
 		rexPrefix,
 		[]byte{0x8D},
 		indirectDisp0ModRMMode,
+		false, // is op code extension
 		dest.Encoding,
 		registers.Rbp.Encoding,
 		nil)
@@ -111,6 +112,7 @@ func computeStackAddress(
 		rexPrefix,
 		[]byte{0x8D},
 		indirectDisp32ModRMMode,
+		false, // is op code extension
 		dest.Encoding,
 		registers.RspEncoding,
 		sibAndImmediate)
@@ -144,7 +146,8 @@ func _updateStack(
 		rexPrefix,
 		[]byte{81},
 		directModRMMode,
-		0, // op code extension
+		true, // is op code extension
+		0,    // op code extension
 		registers.RspEncoding,
 		immediate)
 }

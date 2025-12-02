@@ -29,8 +29,8 @@ func not(
 		panic("should never happen")
 	}
 
-	if operandSize != 64 {
-		operandSize = 32
+	if operandSize != 8 {
+		operandSize = 4
 	}
 
 	mInstruction(builder, operandSize, []byte{0xF7}, 2, dest)

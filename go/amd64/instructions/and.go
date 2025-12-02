@@ -53,11 +53,13 @@ func andIntImmediate(
 	dest *architecture.Register,
 	immediate []byte,
 ) {
+	isUnsigned := false
 	operandSize := 0
 	switch size := simpleType.(type) {
 	case ir.SignedIntType:
 		operandSize = int(size)
 	case ir.UnsignedIntType:
+		isUnsigned = true
 		operandSize = int(size)
 	default:
 		panic("should never happen")
@@ -68,5 +70,5 @@ func andIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, operandSize, opCode, 4, dest, immediate)
+	miInstruction(builder, isUnsigned, operandSize, opCode, 4, dest, immediate)
 }

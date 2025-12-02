@@ -30,12 +30,48 @@ func TestSubInt8(t *testing.T) {
 	expect.Equal(t, layout.Definitions{}, segment.Definitions)
 	expect.Equal(t, layout.Relocations{}, segment.Relocations)
 
+	// sub sil, cl
+	builder = layout.NewSegmentBuilder()
+	sub(builder, ir.Int8, registers.Rsi, registers.Rcx)
+	segment, err = builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x40, 0x2a, 0xf1}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+
+	// sub dil, cl
+	builder = layout.NewSegmentBuilder()
+	sub(builder, ir.Int8, registers.Rdi, registers.Rcx)
+	segment, err = builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x40, 0x2a, 0xf9}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+
+	// sub dl, bpl
+	builder = layout.NewSegmentBuilder()
+	sub(builder, ir.Int8, registers.Rdx, registers.Rbp)
+	segment, err = builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x40, 0x2a, 0xd5}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+
 	// sub dl, sil
 	builder = layout.NewSegmentBuilder()
 	sub(builder, ir.Int8, registers.Rdx, registers.Rsi)
 	segment, err = builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x40, 0x2a, 0xd6}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+
+	// sub dl, dil
+	builder = layout.NewSegmentBuilder()
+	sub(builder, ir.Int8, registers.Rdx, registers.Rdi)
+	segment, err = builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x40, 0x2a, 0xd7}, segment.Content.Flatten())
 	expect.Equal(t, layout.Definitions{}, segment.Definitions)
 	expect.Equal(t, layout.Relocations{}, segment.Relocations)
 
@@ -282,4 +318,124 @@ func TestSubFloat64(t *testing.T) {
 	expect.Equal(t, layout.Relocations{}, segment.Relocations)
 }
 
-// TODO test subIntImmediate
+func TestSubInt8Immediate(t *testing.T) {
+	// sub cl, 0x12
+	builder := layout.NewSegmentBuilder()
+	subIntImmediate(builder, ir.Int8, registers.Rcx, []byte{0x12})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x80, 0xe9, 0x12}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSubInt16Immediate(t *testing.T) {
+	// sub cx, 0x1234
+	builder := layout.NewSegmentBuilder()
+	subIntImmediate(builder, ir.Int16, registers.Rcx, []byte{0x34, 0x12})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x66, 0x81, 0xe9, 0x34, 0x12},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSubInt32Immediate(t *testing.T) {
+	// sub ecx, 0x12345678
+	builder := layout.NewSegmentBuilder()
+	subIntImmediate(
+		builder,
+		ir.Int32,
+		registers.Rcx,
+		[]byte{0x78, 0x56, 0x34, 0x12})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x81, 0xe9, 0x78, 0x56, 0x34, 0x12},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSubInt64Immediate(t *testing.T) {
+	// sub rcx, 0x3456789a
+	builder := layout.NewSegmentBuilder()
+	subIntImmediate(
+		builder,
+		ir.Int64,
+		registers.Rcx,
+		[]byte{0x9a, 0x78, 0x56, 0x34})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x48, 0x81, 0xe9, 0x9a, 0x78, 0x56, 0x34},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSubUint8Immediate(t *testing.T) {
+	// sub r12b, 0x12
+	builder := layout.NewSegmentBuilder()
+	subIntImmediate(builder, ir.Uint8, registers.R12, []byte{0x12})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x41, 0x80, 0xec, 0x12}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSubUint16Immediate(t *testing.T) {
+	// sub r12w, 0x1234
+	builder := layout.NewSegmentBuilder()
+	subIntImmediate(builder, ir.Uint16, registers.R12, []byte{0x34, 0x12})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x66, 0x41, 0x81, 0xec, 0x34, 0x12},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSubUint32Immediate(t *testing.T) {
+	// sub r12d, 0x12345678
+	builder := layout.NewSegmentBuilder()
+	subIntImmediate(
+		builder,
+		ir.Uint32,
+		registers.R12,
+		[]byte{0x78, 0x56, 0x34, 0x12})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x41, 0x81, 0xec, 0x78, 0x56, 0x34, 0x12},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSubUint64Immediate(t *testing.T) {
+	// sub r12, 0x3456789a
+	builder := layout.NewSegmentBuilder()
+	subIntImmediate(
+		builder,
+		ir.Uint64,
+		registers.R12,
+		[]byte{0x9a, 0x78, 0x56, 0x34})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x49, 0x81, 0xec, 0x9a, 0x78, 0x56, 0x34},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}

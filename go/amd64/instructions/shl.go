@@ -29,8 +29,8 @@ func shl(
 		panic("should never happen")
 	}
 
-	if operandSize != 64 {
-		operandSize = 32
+	if operandSize != 8 {
+		operandSize = 4
 	}
 
 	mcInstruction(builder, operandSize, []byte{0xD3}, 4, dest)
@@ -60,8 +60,8 @@ func shlIntImmediate(
 		panic("should never happen")
 	}
 
-	if operandSize != 64 {
-		operandSize = 32
+	if operandSize != 8 {
+		operandSize = 4
 	}
 
 	mi8Instruction(builder, operandSize, []byte{0xC1}, 4, dest, immediate)

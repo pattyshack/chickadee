@@ -28,7 +28,7 @@ func negSignedInt(
 	operandSize := int(simpleType.(ir.SignedIntType))
 
 	opCode := []byte{0xF7}
-	if operandSize == 8 {
+	if operandSize == 1 {
 		opCode = []byte{0xF6}
 	}
 

@@ -97,6 +97,7 @@ func convertFloatToInt(
 		baseRex,
 		[]byte{0x0F, 0x2D},
 		directModRMMode,
+		false, // is op code extension
 		dest.Encoding,
 		src.Encoding,
 		nil) // immediate
@@ -145,6 +146,7 @@ func convertSignedIntToFloat(
 		baseRex,
 		[]byte{0x0F, 0x2A},
 		directModRMMode,
+		false, // is op code extension
 		dest.Encoding,
 		src.Encoding,
 		nil) // immediate
@@ -197,6 +199,7 @@ func convertSmallUintToFloat(
 		baseRex,
 		[]byte{0x0F, 0x2A},
 		directModRMMode,
+		false, // is op code extension
 		dest.Encoding,
 		src.Encoding,
 		nil) // immediate
@@ -281,6 +284,7 @@ func convertUint64ToFloat(
 		rexPrefix|rexWBit,
 		[]byte{0x0F, 0x2A},
 		directModRMMode,
+		false, // is op code extension
 		dest.Encoding,
 		src.Encoding,
 		nil) // immediate
@@ -315,6 +319,7 @@ func convertUint64ToFloat(
 		rexPrefix|rexWBit,
 		[]byte{0x0F, 0x2A},
 		directModRMMode,
+		false, // is op code extension
 		dest.Encoding,
 		src.Encoding,
 		nil) // immediate

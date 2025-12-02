@@ -82,7 +82,7 @@ func mulIntImmediate(
 	switch operandSize {
 	case 1:
 		opCode = []byte{0x6B}
-		operandSize = 32
+		operandSize = 4
 	case 2, 4:
 	case 8:
 		expectedLength = 4

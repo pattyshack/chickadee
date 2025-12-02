@@ -46,6 +46,7 @@ func modRMInstruction(
 	baseRex byte,
 	opCode []byte,
 	modRMMode int,
+	isOpCodeExtension bool,
 	regXReg int, // either 1. X.Reg, or 2. /0 - /7 op code extension
 	rmXReg int, // always X.Reg
 	immediateOrSib []byte, // nil / ib|iw|id|io (1|2|4|8 byte) / sib
@@ -68,7 +69,10 @@ func modRMInstruction(
 		switch operandSize {
 		case 1:
 			// NOTE: rex makes AH/CH/DH/BH inaccessible for 8-bit operand
-			requireRex = (4 <= regXReg && regXReg < 7) || (4 <= rmXReg && rmXReg < 7)
+			requireRex = 4 <= rmXReg && rmXReg <= 7
+			if !isOpCodeExtension && !requireRex {
+				requireRex = 4 <= regXReg && regXReg <= 7
+			}
 		case 2:
 			instruction = append(instruction, int16OperandPrefix)
 		case 4:
@@ -130,6 +134,7 @@ func rmInstruction(
 		rexPrefix,
 		opCode,
 		directModRMMode,
+		false,
 		reg.Encoding,
 		rm.Encoding,
 		nil)
@@ -213,6 +218,7 @@ func indirectModRMInstruction(
 		rex,
 		opCode,
 		addressMode,
+		false,
 		reg.Encoding,
 		rexRmX|modRMRm,
 		immediateOrSib)
@@ -239,6 +245,7 @@ func mInstruction(
 		rexPrefix,
 		opCode,
 		directModRMMode,
+		true,
 		opCodeExtension,
 		rm.Encoding,
 		nil)
@@ -264,6 +271,7 @@ func mcInstruction(
 // (general) MI Op/En: <opCode> </digit> <ModRM:r/m (r, w)> <ib|iw|id immediate>
 func miInstruction(
 	builder *layout.SegmentBuilder,
+	isUnsigned bool,
 	operandSize int,
 	opCode []byte,
 	opCodeExtension int, // instead of reg's X.Reg
@@ -288,6 +296,10 @@ func miInstruction(
 			expectedLength))
 	}
 
+	if operandSize == 8 && isUnsigned && (immediate[3]&0b10000000) != 0 {
+		panic("uint64 immedate not representable by 32-bit signed integer")
+	}
+
 	modRMInstruction(
 		builder,
 		false, // isFloat
@@ -295,6 +307,7 @@ func miInstruction(
 		rexPrefix,
 		opCode,
 		directModRMMode,
+		true,
 		opCodeExtension,
 		rm.Encoding,
 		immediate)
@@ -326,6 +339,7 @@ func mi8Instruction(
 		rexPrefix,
 		opCode,
 		directModRMMode,
+		true,
 		opCodeExtension,
 		rm.Encoding,
 		immediate)
@@ -347,20 +361,6 @@ func rmiInstruction(
 		panic("invalid register")
 	}
 
-	// NOTE: In general, 64 bit operand support id (4 byte) immediate, but not
-	// io (8 byte) immediate.
-	expectedLength := operandSize
-	if operandSize == 8 {
-		expectedLength = 4
-	}
-
-	if len(immediate) != expectedLength {
-		panic(fmt.Sprintf(
-			"incorrect immediate length (%d != %d)",
-			len(immediate),
-			expectedLength))
-	}
-
 	modRMInstruction(
 		builder,
 		false, // isFloat
@@ -368,6 +368,7 @@ func rmiInstruction(
 		rexPrefix,
 		opCode,
 		directModRMMode,
+		false,
 		reg.Encoding,
 		rm.Encoding,
 		immediate)
