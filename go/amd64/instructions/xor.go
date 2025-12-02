@@ -30,8 +30,8 @@ func xor(
 		panic("should never happen")
 	}
 
-	if operandSize != 64 {
-		operandSize = 32
+	if operandSize != 8 {
+		operandSize = 4
 	}
 
 	rmInstruction(builder, false, operandSize, []byte{0x33}, dest, src)
@@ -47,7 +47,7 @@ func xor(
 // 8-bit (MI Op/En):     80 /6 ib
 // 16-bit (MI Op/En):    81 /6 iw
 // 32/64-bit (MI Op/En): 81 /6 id
-func xorImmediate(
+func xorIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,

@@ -92,6 +92,6 @@ func negFloat(
 		panic("should never happen")
 	}
 
-	setImmediate(builder, dest, maskBytes)
+	setIntImmediate(builder, dest, maskBytes)
 	xor(builder, xorType, dest, src)
 }

@@ -252,7 +252,7 @@ func convertUint64ToFloat(
 	nonNegative := "non negative"
 	end := "end"
 
-	instructions := &layout.SegmentBuilder{}
+	instructions := layout.NewSegmentBuilder()
 
 	// if int64(src) >= 0
 	jgeIntImmediate(instructions, nonNegative, ir.Int64, src, []byte{0, 0, 0, 0})
@@ -265,10 +265,10 @@ func convertUint64ToFloat(
 	copyGeneral(instructions, scratch, 8, src)
 
 	// <scratch> = <scratch> / 2
-	shrImmediate(instructions, ir.Uint64, scratch, []byte{1, 0, 0, 0})
+	shrIntImmediate(instructions, ir.Uint64, scratch, []byte{1, 0, 0, 0})
 
 	// <src> = <src> % 2
-	andImmediate(instructions, ir.Uint32, src, []byte{1, 0, 0, 0})
+	andIntImmediate(instructions, ir.Uint32, src, []byte{1, 0, 0, 0})
 
 	// round up <src>
 	or(instructions, ir.Uint64, src, scratch)

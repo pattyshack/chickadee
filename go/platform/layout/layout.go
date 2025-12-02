@@ -106,6 +106,10 @@ type SegmentBuilder struct {
 	Segments []Segment
 }
 
+func NewSegmentBuilder() *SegmentBuilder {
+	return &SegmentBuilder{}
+}
+
 func (builder *SegmentBuilder) Append(segment Segment) {
 	segment.ShiftAll(builder.Size)
 

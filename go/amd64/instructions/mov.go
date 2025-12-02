@@ -207,7 +207,7 @@ func copyGeneralToFloat(
 // 16-bit (OI Op/En): B8 + rw iw
 // 32-bit (OI Op/En): B8 + rd id
 // 64-bit (OI Op/En): B8 + rd io
-func setImmediate(
+func setIntImmediate(
 	builder *layout.SegmentBuilder,
 	dest *architecture.Register, // general register
 	immediate []byte,

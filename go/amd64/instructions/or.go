@@ -30,8 +30,8 @@ func or(
 		panic("should never happen")
 	}
 
-	if operandSize != 64 {
-		operandSize = 32
+	if operandSize != 8 {
+		operandSize = 4
 	}
 
 	rmInstruction(builder, false, operandSize, []byte{0x0B}, dest, src)
@@ -47,7 +47,7 @@ func or(
 // 8-bit (MI Op/En):     80 /1 ib
 // 16-bit (MI Op/En):    81 /1 iw
 // 32/64-bit (MI Op/En): 81 /1 id
-func orImmediate(
+func orIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,

@@ -51,7 +51,7 @@ func shr(
 // Unsigned int arithmetic right shift (sar):
 // 8-bit (MI8 Op/En):        C0 /5 ib
 // 16/32/64-bit (MI8 Op/En): C1 /5 ib
-func shrImmediate(
+func shrIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,

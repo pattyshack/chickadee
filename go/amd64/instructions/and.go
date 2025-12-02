@@ -30,8 +30,8 @@ func and(
 		panic("should never happen")
 	}
 
-	if operandSize != 64 {
-		operandSize = 32
+	if operandSize != 8 {
+		operandSize = 4
 	}
 
 	rmInstruction(builder, false, operandSize, []byte{0x23}, dest, src)
@@ -47,7 +47,7 @@ func and(
 // 8-bit (MI Op/En):     80 /4 ib
 // 16-bit (MI Op/En):    81 /4 iw
 // 32/64-bit (MI Op/En): 81 /4 id
-func andImmediate(
+func andIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,

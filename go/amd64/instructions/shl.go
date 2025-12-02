@@ -44,7 +44,7 @@ func shl(
 // does not change the result bits.
 //
 // 8/16/32/64-bit (MI8 Op/En): C1 /4 ib (32/64-bit operand variants)
-func shlImmediate(
+func shlIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,

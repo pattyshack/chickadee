@@ -14,6 +14,15 @@ import (
 // - Address must be loaded into register before use.  We won't mix address
 // computation with other operations.
 
+// Resources:
+//
+// https://wiki.osdev.org/X86-64_Instruction_Encoding
+// https://www.felixcloutier.com/x86/
+// https://defuse.ca/online-x86-assembler.htm
+
+// NOTE: we'll use intel assembly syntax in comments since online assembler
+// all uses intel syntax.
+
 const (
 	int16OperandPrefix   = 0x66 // aka operand size prefix in intel manual
 	float32OperandPrefix = 0xf3
