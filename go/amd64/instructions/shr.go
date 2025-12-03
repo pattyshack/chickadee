@@ -33,7 +33,7 @@ func shr(
 	}
 
 	opCode := byte(0xD3)
-	if operandSize == 8 {
+	if operandSize == 1 {
 		opCode = 0xD2
 	}
 
@@ -68,7 +68,7 @@ func shrIntImmediate(
 	}
 
 	opCode := byte(0xC1)
-	if operandSize == 8 {
+	if operandSize == 1 {
 		opCode = 0xC0
 	}
 
