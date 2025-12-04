@@ -34,7 +34,7 @@ func xor(
 		operandSize = 4
 	}
 
-	rmInstruction(builder, false, operandSize, []byte{0x33}, dest, src)
+	newRM(false, operandSize, []byte{0x33}, dest, src).encode(builder)
 }
 
 // <int/uint dest> ^= <int/uint immediate>
@@ -70,5 +70,5 @@ func xorIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, isUnsigned, operandSize, opCode, 6, dest, immediate)
+	newMI(isUnsigned, operandSize, opCode, 6, dest, immediate).encode(builder)
 }

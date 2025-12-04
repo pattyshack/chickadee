@@ -24,99 +24,154 @@ import (
 // all uses intel syntax.
 
 const (
-	int16OperandPrefix   = 0x66 // aka operand size prefix in intel manual
+	operandSizePrefix    = 0x66
+	addressSizePrefix    = 0x67
 	float32OperandPrefix = 0xf3
 	float64OperandPrefix = 0xf2
-	rexPrefix            = byte(0x40)
-	rexWBit              = byte(0x08) // int 64 operand
+
+	rexPrefix = byte(0b0100_0000)
+	rexWBit   = byte(0b0000_1_000)
+	rexRBit   = byte(0b00000_1_00)
+	rexXBit   = byte(0b000000_1_0)
+	rexBBit   = byte(0b0000000_1)
 
 	// encoding = (mode, reg, r/m)
-	indirectDisp0ModRMMode  = 0b00_000_000 // [r/m] or [SIB]
-	indirectDisp8ModRMMode  = 0b01_000_000 // [r/m + disp8]
-	indirectDisp32ModRMMode = 0b10_000_000 // [r/m + disp32]
-	directModRMMode         = 0b11_000_000
+	indirectDisp0ModRMMode  = byte(0b00_000_000) // [r/m] or [SIB]
+	indirectDisp8ModRMMode  = byte(0b01_000_000) // [r/m + disp8]
+	indirectDisp32ModRMMode = byte(0b10_000_000) // [r/m + disp32]
+	directModRMMode         = byte(0b11_000_000)
 )
 
-func modRMInstruction(
-	builder *layout.SegmentBuilder,
+type modRMSpec struct {
+	requireOperandSizePrefix bool // (0x66) 16-bit int (and some float) operation
+	requireAddressSizePrefix bool // (0x67)
+	requireFloat32Prefix     bool // (0xf3) SSE2 float32 operations
+	requireFloat64Prefix     bool // (0xf2) SSE2 float64 operations
+
+	requireRexPrefix bool // make AH/CH/DH/BH registers inaccessible
+	requireRexWBit   bool // 64-bit operation
+	requireRexRBit   bool // MODRM.reg's extension
+	requireRexXBit   bool // SIB.index's extension
+	requireRexBBit   bool // MODRM.rm or SIB.base's extension
+
+	opCode []byte
+
+	// MODRM
+	mode byte
+	reg  byte // MODRM.reg or op code extension
+	rm   byte // MODRM.rm
+
+	// Could be nil.  sib byte and/or ib|iw|id|io immediate (1|2|4|8 bytes)
+	sibAndOrImmediate []byte
+}
+
+func (spec *modRMSpec) maybeSetRexPrefix(xReg int) {
+	if 4 <= xReg && xReg <= 7 {
+		spec.requireRexPrefix = true
+	}
+}
+
+func (spec modRMSpec) encode(builder *layout.SegmentBuilder) {
+	// 6 for prefixes and modRM suffix
+	instruction := make([]byte, 0, 6+len(spec.opCode)+len(spec.sibAndOrImmediate))
+
+	if spec.requireOperandSizePrefix {
+		instruction = append(instruction, operandSizePrefix)
+	}
+
+	if spec.requireAddressSizePrefix {
+		instruction = append(instruction, addressSizePrefix)
+	}
+
+	if spec.requireFloat32Prefix {
+		instruction = append(instruction, float32OperandPrefix)
+	}
+
+	if spec.requireFloat64Prefix {
+		instruction = append(instruction, float64OperandPrefix)
+	}
+
+	rex := rexPrefix
+	if spec.requireRexWBit {
+		rex |= rexWBit
+	}
+	if spec.requireRexRBit {
+		rex |= rexRBit
+	}
+	if spec.requireRexXBit {
+		rex |= rexXBit
+	}
+	if spec.requireRexBBit {
+		rex |= rexBBit
+	}
+
+	if spec.requireRexPrefix || rex != rexPrefix {
+		instruction = append(instruction, rex)
+	}
+
+	instruction = append(instruction, spec.opCode...)
+	instruction = append(instruction, spec.mode|(spec.reg<<3)|spec.rm)
+	instruction = append(instruction, spec.sibAndOrImmediate...)
+
+	builder.AppendBasicData(instruction)
+}
+
+func _newRMI(
 	isFloat bool,
 	operandSize int,
-	// baseRex is normally rexPrefix, rexPrefix|rexWBit for float<->int64
-	// conversion
-	baseRex byte,
 	opCode []byte,
-	modRMMode int,
-	isOpCodeExtension bool,
-	regXReg int, // either 1. X.Reg, or 2. /0 - /7 op code extension
-	rmXReg int, // always X.Reg
-	immediateOrSib []byte, // nil / ib|iw|id|io (1|2|4|8 byte) / sib
-) {
-	// +3 for 16-bit/float prefix, rex prefix, and modRM suffix
-	instruction := make([]byte, 0, len(opCode)+3+len(immediateOrSib))
+	reg *architecture.Register,
+	rm *architecture.Register,
+	immediate []byte,
+) modRMSpec {
+	spec := modRMSpec{
+		requireRexRBit:    (reg.Encoding & 0x08) != 0,
+		requireRexBBit:    (rm.Encoding & 0x08) != 0,
+		opCode:            opCode,
+		mode:              directModRMMode,
+		reg:               byte(reg.Encoding & 0x07),
+		rm:                byte(rm.Encoding & 0x07),
+		sibAndOrImmediate: immediate,
+	}
 
-	requireRex := false
-	rex := baseRex
 	if isFloat {
 		switch operandSize {
 		case 4:
-			instruction = append(instruction, float32OperandPrefix)
+			spec.requireFloat32Prefix = true
 		case 8:
-			instruction = append(instruction, float64OperandPrefix)
+			spec.requireFloat64Prefix = true
 		default:
 			panic("should never happen")
 		}
 	} else {
 		switch operandSize {
 		case 1:
-			// NOTE: rex makes AH/CH/DH/BH inaccessible for 8-bit operand
-			requireRex = 4 <= rmXReg && rmXReg <= 7
-			if !isOpCodeExtension && !requireRex {
-				requireRex = 4 <= regXReg && regXReg <= 7
-			}
+			spec.maybeSetRexPrefix(reg.Encoding)
+			spec.maybeSetRexPrefix(rm.Encoding)
 		case 2:
-			instruction = append(instruction, int16OperandPrefix)
+			spec.requireOperandSizePrefix = true
 		case 4:
 		case 8:
-			rex |= rexWBit
+			spec.requireRexWBit = true
 		default:
 			panic("should never happen")
 		}
 	}
 
-	// reg's rex extension bit (R-bit) and modR/M reg bits
-	rexRegX := (regXReg & 0x08) >> 1
-	modRMReg := (regXReg & 0x07) << 3
-
-	// rm's rex extension bit (B-bit) and modR/M rm bits
-	rexRmX := (rmXReg & 0x08) >> 3
-	modRMRm := rmXReg & 0x07
-
-	rex |= byte(rexRegX | rexRmX)
-
-	if requireRex || rex != rexPrefix {
-		instruction = append(instruction, rex)
-	}
-
-	instruction = append(instruction, opCode...)
-	instruction = append(instruction, byte(modRMMode|modRMReg|modRMRm))
-
-	instruction = append(instruction, immediateOrSib...)
-
-	builder.AppendBasicData(instruction)
+	return spec
 }
 
 // Register-direct addressing ModRM instruction of the form:
 //
-// (general) RM Op/En: <opCode> <ModRM:reg (r, w)>, <ModRM:r/m (r)>
-// (SSE2) A Op/En:     <opCode> <ModRM:reg (r, w)>, <ModRM:r/m (r)>
-func rmInstruction(
-	builder *layout.SegmentBuilder,
+// (imul) RMI Op/En:   <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)> <ib|iw|id>
+func newRMI(
 	isFloat bool,
 	operandSize int,
 	opCode []byte,
 	reg *architecture.Register,
 	rm *architecture.Register,
-) {
+	immediate []byte,
+) modRMSpec {
 	if isFloat {
 		if !reg.AllowFloatOperations || !rm.AllowFloatOperations {
 			panic("invalid register")
@@ -127,161 +182,69 @@ func rmInstruction(
 		}
 	}
 
-	modRMInstruction(
-		builder,
-		isFloat,
-		operandSize,
-		rexPrefix,
-		opCode,
-		directModRMMode,
-		false,
-		reg.Encoding,
-		rm.Encoding,
-		nil)
+	return _newRMI(isFloat, operandSize, opCode, reg, rm, immediate)
 }
 
-// indirect addressing ModRM instruction of the form:
+// Register-direct addressing ModRM instruction of the form:
 //
-// (general) RM Op/En: <opCode> <ModRM:reg (r, w)>, [<ModRM:r/m (r)>]
-// (general) MR Op/En: <opCode> [<ModRM:r/m (r, w)>], <ModRM:reg (r)>
-// (SSE2) A Op/En: <opCode> <ModRM:reg (r, w)>, [<ModRM:r/m (r)>]
-// (SSE2) B Op/En: <opCode> [<ModRM:r/m (r, w)>], <ModRM:reg (r)>
-func indirectModRMInstruction(
-	builder *layout.SegmentBuilder,
+// (general) RM Op/En: <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)>
+// (SSE2) A Op/En:     <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)>
+func newRM(
 	isFloat bool,
 	operandSize int,
 	opCode []byte,
 	reg *architecture.Register,
-	rm *architecture.Register, // address
-) {
-	rex := rexPrefix
-	if isFloat {
-		if !reg.AllowFloatOperations {
-			panic("invalid register")
-		}
+	rm *architecture.Register,
+) modRMSpec {
+	return newRMI(isFloat, operandSize, opCode, reg, rm, nil)
+}
 
-		switch operandSize {
-		case 4:
-		case 8:
-			rex |= rexWBit
-		default:
-			panic(fmt.Sprintf("unsupported size: %d", operandSize))
-		}
+func _newMI(
+	operandSize int,
+	opCode []byte,
+	opCodeExtension byte,
+	rm *architecture.Register,
+	immediate []byte,
+) modRMSpec {
+	spec := modRMSpec{
+		requireRexBBit:    (rm.Encoding & 0x08) != 0,
+		opCode:            opCode,
+		mode:              directModRMMode,
+		reg:               opCodeExtension,
+		rm:                byte(rm.Encoding & 0x07),
+		sibAndOrImmediate: immediate,
+	}
 
-		// float mov uses int16 (operand size prefixed) encoding
-		operandSize = 2
-	} else {
-		if !reg.AllowGeneralOperations {
-			panic("invalid register")
-		}
+	switch operandSize {
+	case 1:
+		spec.maybeSetRexPrefix(rm.Encoding)
+	case 2:
+		spec.requireOperandSizePrefix = true
+	case 4:
+	case 8:
+		spec.requireRexWBit = true
+	default:
+		panic("should never happen")
 	}
 
 	if !rm.AllowGeneralOperations {
 		panic("invalid register")
 	}
 
-	rexRmX := rm.Encoding & 0x08
-	modRMRm := rm.Encoding & 0x07
-
-	addressMode := indirectDisp0ModRMMode
-	var immediateOrSib []byte
-
-	switch modRMRm {
-	case 4: // either rsp or r12
-		// NOTE: we must use an alternative encoding for rsp/r12 since the default
-		// encoding refers to [SIB] rather than [r/m].
-
-		// SIB byte = (SIB.scale, SIB.index, SIB.base) where
-		//
-		// SIB.scale = 00 (factor s = 1)
-		//  - We can use any scale factor since it's ignore
-		//
-		// SIB.index = 0.100 (rsp)
-		//  - rsp index mode ignores index and scale: i.e., address = [base]
-		//
-		// SIB.base = <rexRMX>.100 (either rsp or r12)
-		//  - the upper bit is in REX.B
-		immediateOrSib = []byte{0b00_100_100}
-
-	case 5: // either rbp or r13
-		// NOTE: we must use an alternative encoding for rbp/r13 since the default
-		// encoding refers to [RIP + disp32] rather than [r/m].
-
-		addressMode = indirectDisp8ModRMMode // use [<r/m> + disp8] encoding
-		immediateOrSib = []byte{0}           // immediate
-	}
-
-	modRMInstruction(
-		builder,
-		false,
-		operandSize,
-		rex,
-		opCode,
-		addressMode,
-		false,
-		reg.Encoding,
-		rexRmX|modRMRm,
-		immediateOrSib)
-}
-
-// Register-direct addressing ModRM instruction of the form:
-//
-// (general) M Op/En: <opCode> </digit> <ModRM:r/m (r, w)>
-func mInstruction(
-	builder *layout.SegmentBuilder,
-	operandSize int,
-	opCode []byte,
-	opCodeExtension int, // instead of reg's X.Reg
-	rm *architecture.Register,
-) {
-	if !rm.AllowGeneralOperations {
-		panic("invalid register")
-	}
-
-	modRMInstruction(
-		builder,
-		false, // isFloat
-		operandSize,
-		rexPrefix,
-		opCode,
-		directModRMMode,
-		true,
-		opCodeExtension,
-		rm.Encoding,
-		nil)
-}
-
-// Register-direct addressing ModRM instruction of the form:
-//
-// (general) MC Op/En: <opCode> </digit> <ModRM:r/m (r, w)> <RCX>
-func mcInstruction(
-	builder *layout.SegmentBuilder,
-	operandSize int,
-	opCode []byte,
-	opCodeExtension int, // instead of reg's X.Reg
-	rm *architecture.Register,
-) {
-	// mc has same byte encoding as m instruction, but different instruction
-	// constraints (extra hardcoded RCX)
-	mInstruction(builder, operandSize, opCode, opCodeExtension, rm)
+	return spec
 }
 
 // Register-direct addressing ModRM instruction of the form:
 //
 // (general) MI Op/En: <opCode> </digit> <ModRM:r/m (r, w)> <ib|iw|id immediate>
-func miInstruction(
-	builder *layout.SegmentBuilder,
+func newMI(
 	isUnsigned bool,
 	operandSize int,
 	opCode []byte,
-	opCodeExtension int, // instead of reg's X.Reg
+	opCodeExtension byte,
 	rm *architecture.Register,
 	immediate []byte,
-) {
-	if !rm.AllowGeneralOperations {
-		panic("invalid register")
-	}
-
+) modRMSpec {
 	// NOTE: In general, 64 bit operand support id (4 byte) immediate, but not
 	// io (8 byte) immediate.
 	expectedLength := operandSize
@@ -300,78 +263,110 @@ func miInstruction(
 		panic("uint64 immedate not representable by 32-bit signed integer")
 	}
 
-	modRMInstruction(
-		builder,
-		false, // isFloat
-		operandSize,
-		rexPrefix,
-		opCode,
-		directModRMMode,
-		true,
-		opCodeExtension,
-		rm.Encoding,
-		immediate)
+	return _newMI(operandSize, opCode, opCodeExtension, rm, immediate)
 }
 
 // Register-direct addressing ModRM instruction of the form:
 //
 // (shift) MI Op/En: <opCode> </digit> <ModRM:r/m (r, w)> <ib immediate>
-func mi8Instruction(
-	builder *layout.SegmentBuilder,
+func newMI8(
 	operandSize int,
 	opCode []byte,
-	opCodeExtension int, // instead of reg's X.Reg
+	opCodeExtension byte,
 	rm *architecture.Register,
 	immediate []byte,
-) {
-	if !rm.AllowGeneralOperations {
-		panic("invalid register")
-	}
-
+) modRMSpec {
 	if len(immediate) != 1 {
 		panic(fmt.Sprintf("incorrect immediate length (%d != 1)", len(immediate)))
 	}
 
-	modRMInstruction(
-		builder,
-		false, // isFloat
-		operandSize,
-		rexPrefix,
-		opCode,
-		directModRMMode,
-		true,
-		opCodeExtension,
-		rm.Encoding,
-		immediate)
+	return _newMI(operandSize, opCode, opCodeExtension, rm, immediate)
 }
 
 // Register-direct addressing ModRM instruction of the form:
 //
-// (imul) RMI Op/En:
-// <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)> <ib|iw|id immediate>
-func rmiInstruction(
-	builder *layout.SegmentBuilder,
+// (general) M Op/En:  <opCode> </digit> <ModRM:r/m (r, w)>
+// (general) MC Op/En: <opCode> </digit> <ModRM:r/m (r, w)> <RCX>
+func newM(
+	operandSize int,
+	opCode []byte,
+	opCodeExtension byte,
+	rm *architecture.Register,
+) modRMSpec {
+	return _newMI(operandSize, opCode, opCodeExtension, rm, nil)
+}
+
+// indirect addressing ModRM instruction of the form:
+//
+// (general) RM Op/En: <opCode> <ModRM:reg (r, w)>, [<ModRM:r/m (r)>]
+// (general) MR Op/En: <opCode> [<ModRM:r/m (r, w)>], <ModRM:reg (r)>
+// (SSE2) A Op/En: <opCode> <ModRM:reg (r, w)>, [<ModRM:r/m (r)>]
+// (SSE2) B Op/En: <opCode> [<ModRM:r/m (r, w)>], <ModRM:reg (r)>
+func newIndirectRM(
+	isFloat bool,
 	operandSize int,
 	opCode []byte,
 	reg *architecture.Register,
-	rm *architecture.Register,
-	immediate []byte,
-) {
-	if !reg.AllowGeneralOperations || !rm.AllowGeneralOperations {
+	rm *architecture.Register, // address
+) modRMSpec {
+	spec := modRMSpec{
+		requireRexRBit: (reg.Encoding & 0x08) != 0,
+		requireRexBBit: (rm.Encoding & 0x08) != 0,
+		opCode:         opCode,
+		mode:           indirectDisp0ModRMMode,
+		reg:            byte(reg.Encoding & 0x07),
+		rm:             byte(rm.Encoding & 0x07),
+	}
+
+	if isFloat {
+		if !reg.AllowFloatOperations {
+			panic("invalid register")
+		}
+
+		switch operandSize {
+		case 4:
+		case 8:
+			spec.requireRexWBit = true
+		default:
+			panic("should never happen")
+		}
+
+		spec.requireOperandSizePrefix = true
+	} else {
+		if !reg.AllowGeneralOperations {
+			panic("invalid register")
+		}
+	}
+
+	if !rm.AllowGeneralOperations {
 		panic("invalid register")
 	}
 
-	modRMInstruction(
-		builder,
-		false, // isFloat
-		operandSize,
-		rexPrefix,
-		opCode,
-		directModRMMode,
-		false,
-		reg.Encoding,
-		rm.Encoding,
-		immediate)
+	switch spec.rm {
+	case 4: // either rsp or r12
+		// NOTE: we must use an alternative encoding for rsp/r12 since the default
+		// encoding refers to [SIB] rather than [r/m].
+
+		// SIB byte = (SIB.scale, SIB.index, SIB.base) where
+		//
+		// SIB.scale = 00 (factor s = 1)
+		//  - We can use any scale factor since it's ignore
+		//
+		// SIB.index = 0.100 (rsp)
+		//  - rsp index mode ignores index and scale: i.e., address = [base]
+		//
+		// SIB.base = <rexRMX>.100 (either rsp or r12)
+		//  - the upper bit is in REX.B
+		spec.sibAndOrImmediate = []byte{0b00_100_100}
+	case 5: // either rbp or r13
+		// NOTE: we must use an alternative encoding for rbp/r13 since the default
+		// encoding refers to [RIP + disp32] rather than [r/m].
+
+		spec.mode = indirectDisp8ModRMMode // use [<r/m> + disp8] encoding
+		spec.sibAndOrImmediate = []byte{0} // immediate
+	}
+
+	return spec
 }
 
 // Register encoded op code instruction of the form:
@@ -407,9 +402,9 @@ func oiInstruction(
 	switch operandSize {
 	case 1:
 		// NOTE: rex makes AH/CH/DH/BH inaccessible for 8-bit operand
-		requireRex = 4 <= register.Encoding && register.Encoding < 7
+		requireRex = 4 <= register.Encoding && register.Encoding <= 7
 	case 2:
-		instruction = append(instruction, int16OperandPrefix)
+		instruction = append(instruction, operandSizePrefix)
 	case 4:
 	case 8:
 		rex |= rexWBit

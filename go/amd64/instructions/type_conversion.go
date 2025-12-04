@@ -50,7 +50,7 @@ func convertFloatToFloat(
 	if srcSize == destSize {
 		copyFloat(builder, dest, srcSize, src)
 	} else {
-		rmInstruction(builder, true, srcSize, []byte{0x0F, 0x5A}, dest, src)
+		newRM(true, srcSize, []byte{0x0F, 0x5A}, dest, src).encode(builder)
 	}
 }
 
@@ -75,32 +75,23 @@ func convertFloatToInt(
 	srcType ir.Type,
 	src *architecture.Register,
 ) {
-	if !dest.AllowGeneralOperations {
+	if !dest.AllowGeneralOperations || !src.AllowFloatOperations {
 		panic("invalid register")
 	}
 
-	if !src.AllowFloatOperations {
-		panic("invalid register")
-	}
-
-	operandSize := int(srcType.(ir.FloatType))
-
-	baseRex := rexPrefix
-	if destType.Size() > 4 {
-		baseRex |= rexWBit // coverts float to int64 instead of int32
-	}
-
-	modRMInstruction(
-		builder,
+	spec := _newRMI(
 		true, // isFloat
-		operandSize,
-		baseRex,
+		int(srcType.(ir.FloatType)),
 		[]byte{0x0F, 0x2D},
-		directModRMMode,
-		false, // is op code extension
-		dest.Encoding,
-		src.Encoding,
-		nil) // immediate
+		dest,
+		src,
+		nil)
+
+	if destType.Size() == 8 {
+		spec.requireRexWBit = true
+	}
+
+	spec.encode(builder)
 }
 
 // <dest-sized float dest> = <src-sized signed int src>
@@ -121,35 +112,29 @@ func convertSignedIntToFloat(
 	srcType ir.Type,
 	src *architecture.Register,
 ) {
-	if !dest.AllowFloatOperations {
+	if !dest.AllowFloatOperations || !src.AllowGeneralOperations {
 		panic("invalid register")
 	}
 
-	if !src.AllowGeneralOperations {
-		panic("invalid register")
-	}
-
-	baseRex := rexPrefix
 	srcSize := int(srcType.(ir.SignedIntType))
 	if srcSize < 4 {
 		extendInt(builder, 4, src, srcType, src)
 	} else if srcSize > 4 {
-		baseRex |= rexWBit
 	}
 
-	operandSize := int(destType.(ir.FloatType))
-
-	modRMInstruction(
-		builder,
+	spec := _newRMI(
 		true, // isFloat,
-		operandSize,
-		baseRex,
+		int(destType.(ir.FloatType)),
 		[]byte{0x0F, 0x2A},
-		directModRMMode,
-		false, // is op code extension
-		dest.Encoding,
-		src.Encoding,
-		nil) // immediate
+		dest,
+		src,
+		nil)
+
+	if srcType.Size() == 8 {
+		spec.requireRexWBit = true
+	}
+
+	spec.encode(builder)
 }
 
 // <dest-sized float dest> = <uint8/uint16/uint32 src>
@@ -170,20 +155,14 @@ func convertSmallUintToFloat(
 	srcType ir.Type,
 	src *architecture.Register,
 ) {
-	if !dest.AllowFloatOperations {
+	if !dest.AllowFloatOperations || !src.AllowGeneralOperations {
 		panic("invalid register")
 	}
 
-	if !src.AllowGeneralOperations {
-		panic("invalid register")
-	}
-
-	baseRex := rexPrefix
 	extendedSize := 4
 	switch int(srcType.(ir.UnsignedIntType)) {
 	case 1, 2: // use 32-bit operand variant
 	case 4:
-		baseRex |= rexWBit
 		extendedSize = 8
 	default: // uint64 is handled differently
 		panic("should never happen")
@@ -191,18 +170,19 @@ func convertSmallUintToFloat(
 
 	extendInt(builder, extendedSize, src, srcType, src)
 
-	operandSize := int(destType.(ir.FloatType))
-	modRMInstruction(
-		builder,
-		true, // isFloat,
-		operandSize,
-		baseRex,
+	spec := _newRMI(
+		true, // isFloat
+		int(destType.(ir.FloatType)),
 		[]byte{0x0F, 0x2A},
-		directModRMMode,
-		false, // is op code extension
-		dest.Encoding,
-		src.Encoding,
-		nil) // immediate
+		dest,
+		src,
+		nil)
+
+	if srcType.Size() == 8 {
+		spec.requireRexWBit = true
+	}
+
+	spec.encode(builder)
 }
 
 // <dest-sized float dest> = <uint64 src>
@@ -277,17 +257,15 @@ func convertUint64ToFloat(
 	or(instructions, ir.Uint64, src, scratch)
 
 	// cvtsi2ss or cvtsi2sd
-	modRMInstruction(
-		instructions,
+	cvt := _newRMI(
 		true, // isFloat,
 		operandSize,
-		rexPrefix|rexWBit,
 		[]byte{0x0F, 0x2A},
-		directModRMMode,
-		false, // is op code extension
-		dest.Encoding,
-		src.Encoding,
+		dest,
+		src,
 		nil) // immediate
+	cvt.requireRexWBit = true
+	cvt.encode(instructions)
 
 	// <dest> = 2 * <dest>
 	add(instructions, destType, dest, dest)
@@ -312,17 +290,7 @@ func convertUint64ToFloat(
 		layout.Relocations{})
 
 	// cvtsi2ss or cvtsi2sd
-	modRMInstruction(
-		instructions,
-		true, // isFloat,
-		operandSize,
-		rexPrefix|rexWBit,
-		[]byte{0x0F, 0x2A},
-		directModRMMode,
-		false, // is op code extension
-		dest.Encoding,
-		src.Encoding,
-		nil) // immediate
+	cvt.encode(instructions)
 
 	//
 	// end of inlined conversion function

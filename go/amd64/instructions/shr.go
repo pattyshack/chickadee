@@ -23,7 +23,7 @@ func shr(
 	dest *architecture.Register,
 ) {
 	operandSize := 0
-	opCodeExt := 7
+	opCodeExt := byte(7)
 	switch size := simpleType.(type) {
 	case ir.SignedIntType:
 		operandSize = int(size)
@@ -37,7 +37,7 @@ func shr(
 		opCode = 0xD2
 	}
 
-	mcInstruction(builder, operandSize, []byte{opCode}, opCodeExt, dest)
+	newM(operandSize, []byte{opCode}, opCodeExt, dest).encode(builder)
 }
 
 // <int/uint dest> >>= <imm8>
@@ -58,13 +58,13 @@ func shrIntImmediate(
 	immediate []byte,
 ) {
 	operandSize := 0
-	opCodeExt := 7
+	ext := byte(7)
 	switch size := simpleType.(type) {
 	case ir.SignedIntType:
 		operandSize = int(size)
 	case ir.UnsignedIntType:
 		operandSize = int(size)
-		opCodeExt = 5
+		ext = 5
 	}
 
 	opCode := byte(0xC1)
@@ -72,11 +72,5 @@ func shrIntImmediate(
 		opCode = 0xC0
 	}
 
-	mi8Instruction(
-		builder,
-		operandSize,
-		[]byte{opCode},
-		opCodeExt,
-		dest,
-		immediate)
+	newMI8(operandSize, []byte{opCode}, ext, dest, immediate).encode(builder)
 }

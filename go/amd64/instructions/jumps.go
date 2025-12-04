@@ -51,12 +51,12 @@ func compare(
 			opCode = []byte{0x3A}
 		}
 
-		rmInstruction(builder, false, operandSize, opCode, src1, src2)
+		newRM(false, operandSize, opCode, src1, src2).encode(builder)
 		return
 	}
 
-	// NOTE: we can't use the rmInstruction function since the float operations
-	// encoding behave more like 32/16-bit int RM Op/En instructions.
+	// NOTE: we can't use the newRM function since the float operations encoding
+	// behave more like 32/16-bit int RM Op/En instructions.
 
 	if !src1.AllowFloatOperations || src2.AllowFloatOperations {
 		panic("invalid register")
@@ -68,17 +68,14 @@ func compare(
 		operandSize = 2
 	}
 
-	modRMInstruction(
-		builder,
-		false, // uses int encoding convention
-		operandSize,
-		rexPrefix,
+	_newRMI(
+		false,
+		operandSize, // uses int encoding convention
 		[]byte{0x0F, 0x2F},
-		directModRMMode,
-		false, // is op code extension
-		src1.Encoding,
-		src2.Encoding,
-		nil) // immediate
+		src1,
+		src2,
+		nil, // immediate
+	).encode(builder)
 }
 
 // Compare register with int immediate and set eflags.  The src is left
@@ -116,7 +113,7 @@ func compareIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, isUnsigned, operandSize, opCode, 7, src, immediate)
+	newMI(isUnsigned, operandSize, opCode, 7, src, immediate).encode(builder)
 }
 
 // je <label> <int/uint/float src1> <int/uint/float src2>

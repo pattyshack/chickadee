@@ -27,7 +27,7 @@ func copyGeneral(
 		srcSize = 4
 	}
 
-	rmInstruction(builder, false, srcSize, []byte{0x8B}, dest, src)
+	newRM(false, srcSize, []byte{0x8B}, dest, src).encode(builder)
 }
 
 // [<address>] = <general src>
@@ -47,7 +47,7 @@ func copyGeneralToMemory(
 		opCode = []byte{0x88}
 	}
 
-	indirectModRMInstruction(builder, false, srcSize, opCode, src, destAddress)
+	newIndirectRM(false, srcSize, opCode, src, destAddress).encode(builder)
 }
 
 // <general dest> = [<address>]
@@ -67,7 +67,7 @@ func copyMemoryToGeneral(
 		opCode = []byte{0x8A}
 	}
 
-	indirectModRMInstruction(builder, false, srcSize, opCode, dest, srcAddress)
+	newIndirectRM(false, srcSize, opCode, dest, srcAddress).encode(builder)
 }
 
 // <float dest> = <float src>
@@ -86,7 +86,7 @@ func copyFloat(
 		return
 	}
 
-	rmInstruction(builder, true, srcSize, []byte{0x0F, 0x10}, dest, src)
+	newRM(true, srcSize, []byte{0x0F, 0x10}, dest, src).encode(builder)
 }
 
 // [<address>] = <float src>
@@ -101,13 +101,13 @@ func copyFloatToMemory(
 	srcSize int,
 	src *architecture.Register,
 ) {
-	indirectModRMInstruction(
-		builder,
+	newIndirectRM(
 		true,
 		srcSize,
 		[]byte{0x0F, 0x7E},
 		src,
-		destAddress)
+		destAddress,
+	).encode(builder)
 }
 
 // <float dest> = [<address>]
@@ -122,13 +122,13 @@ func copyMemoryToFloat(
 	srcSize int,
 	srcAddress *architecture.Register,
 ) {
-	indirectModRMInstruction(
-		builder,
+	newIndirectRM(
 		true,
 		srcSize,
 		[]byte{0x0F, 0x6E},
 		dest,
-		srcAddress)
+		srcAddress,
+	).encode(builder)
 }
 
 // <general dest> = <float src>
@@ -145,24 +145,25 @@ func copyFloatToGeneral(
 	srcSize int,
 	src *architecture.Register,
 ) {
-	baseRex := rexPrefix // 32-bit variant
-	if srcSize == 8 {
-		baseRex |= rexWBit // 64-bit variant
+	if !dest.AllowGeneralOperations || !src.AllowFloatOperations {
+		panic("invalid registers")
 	}
 
-	// NOTE: this uses int16 style (operand size prefixed) MR Op/En (src before
-	// dest) encoding.
-	modRMInstruction(
-		builder,
+	if srcSize < 4 {
+		srcSize = 4
+	}
+
+	// NOTE: this uses int64 style MR Op/En (src before	dest) encoding, plus
+	// operand size prefix.
+	spec := _newRMI(
 		false,
-		2,
-		baseRex,
+		srcSize,
 		[]byte{0x0F, 0x7E},
-		directModRMMode,
-		false, // is op code extension
-		src.Encoding,
-		dest.Encoding,
-		nil) // immediate
+		src,
+		dest,
+		nil)
+	spec.requireOperandSizePrefix = true
+	spec.encode(builder)
 }
 
 // <float dest> = <general src>
@@ -179,24 +180,25 @@ func copyGeneralToFloat(
 	srcSize int,
 	src *architecture.Register,
 ) {
-	baseRex := rexPrefix // 32-bit variant
-	if srcSize == 8 {
-		baseRex |= rexWBit // 64-bit variant
+	if !src.AllowGeneralOperations || !dest.AllowFloatOperations {
+		panic("invalid registers")
 	}
 
-	// NOTE: this uses int16 style (operand size prefixed) RM Op/En (dest before
-	// src) encoding.
-	modRMInstruction(
-		builder,
+	if srcSize < 4 {
+		srcSize = 4
+	}
+
+	// NOTE: this uses int64 style RM Op/En (dest before src) encoding, plus
+	// operand size prefix.
+	spec := _newRMI(
 		false,
-		2,
-		baseRex,
+		srcSize,
 		[]byte{0x0F, 0x6E},
-		directModRMMode,
-		false, // is op code extension
-		dest.Encoding,
-		src.Encoding,
-		nil) // immediate
+		dest,
+		src,
+		nil)
+	spec.requireOperandSizePrefix = true
+	spec.encode(builder)
 }
 
 // <int/float dest> = <int/float immediate>
@@ -289,7 +291,7 @@ func _extendUnsignedInt(
 
 	destSize = 4 // see above NOTE
 
-	rmInstruction(builder, false, destSize, opCode, dest, src)
+	newRM(false, destSize, opCode, dest, src).encode(builder)
 }
 
 // <extended int dest> = <int src>
@@ -324,5 +326,10 @@ func _extendSignedInt(
 		destSize = 4
 	}
 
-	rmInstruction(builder, false, destSize, opCode, dest, src)
+	spec := newRM(false, destSize, opCode, dest, src)
+	if srcSize == 1 {
+		spec.maybeSetRexPrefix(src.Encoding)
+	}
+
+	spec.encode(builder)
 }

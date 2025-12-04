@@ -47,7 +47,7 @@ func mul(
 		operandSize = 4
 	}
 
-	rmInstruction(builder, isFloat, operandSize, opCode, dest, src)
+	newRM(isFloat, operandSize, opCode, dest, src).encode(builder)
 }
 
 // <int/uint dest> = <int/uint src> * <immediate>
@@ -97,5 +97,5 @@ func mulIntImmediate(
 			expectedLength))
 	}
 
-	rmiInstruction(builder, operandSize, opCode, dest, src, immediate)
+	newRMI(false, operandSize, opCode, dest, src, immediate).encode(builder)
 }

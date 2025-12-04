@@ -45,7 +45,7 @@ func add(
 		operandSize = 4
 	}
 
-	rmInstruction(builder, isFloat, operandSize, opCode, dest, src)
+	newRM(isFloat, operandSize, opCode, dest, src).encode(builder)
 }
 
 // <int/uint dest> += <int/uint immediate>
@@ -83,5 +83,5 @@ func addIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, isUnsigned, operandSize, opCode, 0, dest, immediate)
+	newMI(isUnsigned, operandSize, opCode, 0, dest, immediate).encode(builder)
 }

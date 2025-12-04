@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	cwd = []byte{int16OperandPrefix, 0x99}
+	cwd = []byte{operandSizePrefix, 0x99}
 	cdq = []byte{0x99}
 	cqo = []byte{rexPrefix | rexWBit, 0x99}
 )
@@ -72,7 +72,7 @@ func divRemInt(
 		xor(builder, size, registers.Rdx, registers.Rdx)
 
 		// div
-		mInstruction(builder, int(size), []byte{0xF7}, 6, divisor)
+		newM(int(size), []byte{0xF7}, 6, divisor).encode(builder)
 
 	case ir.SignedIntType:
 		if size == 1 {
@@ -95,7 +95,7 @@ func divRemInt(
 		}
 
 		// idiv
-		mInstruction(builder, int(size), []byte{0xF7}, 7, divisor)
+		newM(int(size), []byte{0xF7}, 7, divisor).encode(builder)
 	default:
 		panic("should never happen")
 	}
@@ -114,5 +114,5 @@ func divFloat(
 	src *architecture.Register,
 ) {
 	operandSize := int(simpleType.(ir.FloatType))
-	rmInstruction(builder, true, operandSize, []byte{0x0F, 0x5E}, dest, src)
+	newRM(true, operandSize, []byte{0x0F, 0x5E}, dest, src).encode(builder)
 }

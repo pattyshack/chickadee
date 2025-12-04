@@ -41,7 +41,7 @@ func sub(
 		opCode = []byte{0x2A}
 	}
 
-	rmInstruction(builder, isFloat, operandSize, opCode, dest, src)
+	newRM(isFloat, operandSize, opCode, dest, src).encode(builder)
 }
 
 // <int/uint dest> -= <int/uint immediate>
@@ -77,5 +77,5 @@ func subIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, isUnsigned, operandSize, opCode, 5, dest, immediate)
+	newMI(isUnsigned, operandSize, opCode, 5, dest, immediate).encode(builder)
 }

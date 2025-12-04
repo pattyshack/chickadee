@@ -33,7 +33,7 @@ func shl(
 		operandSize = 4
 	}
 
-	mcInstruction(builder, operandSize, []byte{0xD3}, 4, dest)
+	newM(operandSize, []byte{0xD3}, 4, dest).encode(builder)
 }
 
 // <int/uint dest> <<= <imm8>
@@ -64,5 +64,5 @@ func shlIntImmediate(
 		operandSize = 4
 	}
 
-	mi8Instruction(builder, operandSize, []byte{0xC1}, 4, dest, immediate)
+	newMI8(operandSize, []byte{0xC1}, 4, dest, immediate).encode(builder)
 }

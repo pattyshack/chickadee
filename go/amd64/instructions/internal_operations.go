@@ -35,17 +35,14 @@ func computeSymbolAddress(
 	// NOTE: We need to use indirectDisp0ModRMMode (00) and set r/m to rbp in
 	// order to access [RIP + disp32] computation.  We'll encode the second half
 	// of the instruction (displacement) separately.
-	modRMInstruction(
-		builder,
+	spec := newIndirectRM(
 		false, // isFloat
 		8,     // address size
-		rexPrefix,
 		[]byte{0x8D},
-		indirectDisp0ModRMMode,
-		false, // is op code extension
-		dest.Encoding,
-		registers.Rbp.Encoding,
-		nil)
+		dest,
+		registers.Rbp)
+	spec.mode = indirectDisp0ModRMMode
+	spec.encode(builder)
 
 	displacement := make([]byte, 4)
 	_, err := binary.Encode(displacement, binary.LittleEndian, offset)
@@ -105,17 +102,17 @@ func computeStackAddress(
 		panic(err)
 	}
 
-	modRMInstruction(
-		builder,
+	spec := newRMI(
 		false, // isFloat
 		8,     // address size
-		rexPrefix,
 		[]byte{0x8D},
-		indirectDisp32ModRMMode,
-		false, // is op code extension
-		dest.Encoding,
-		registers.RspEncoding,
+		dest,
+		registers.Rax, // placeholder for rsp
 		sibAndImmediate)
+	spec.mode = indirectDisp32ModRMMode
+	spec.rm = registers.RspEncoding
+
+	spec.encode(builder)
 }
 
 // <RSP> += <int immediate>
@@ -139,17 +136,15 @@ func _updateStack(
 		panic(err)
 	}
 
-	modRMInstruction(
-		builder,
-		false, // isFloat
+	spec := newMI(
+		false, // isUnsigned
 		8,     // address size
-		rexPrefix,
 		[]byte{81},
-		directModRMMode,
-		true, // is op code extension
-		0,    // op code extension
-		registers.RspEncoding,
+		0,             // op code extension
+		registers.Rax, // placeholder for rsp
 		immediate)
+	spec.rm = registers.RspEncoding
+	spec.encode(builder)
 }
 
 func allocateStackFrame(

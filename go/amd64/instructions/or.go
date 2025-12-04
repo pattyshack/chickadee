@@ -34,7 +34,7 @@ func or(
 		operandSize = 4
 	}
 
-	rmInstruction(builder, false, operandSize, []byte{0x0B}, dest, src)
+	newRM(false, operandSize, []byte{0x0B}, dest, src).encode(builder)
 }
 
 // <int/uint dest> |= <int/uint immediate>
@@ -70,5 +70,5 @@ func orIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, isUnsigned, operandSize, opCode, 1, dest, immediate)
+	newMI(isUnsigned, operandSize, opCode, 1, dest, immediate).encode(builder)
 }

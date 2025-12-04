@@ -34,7 +34,7 @@ func and(
 		operandSize = 4
 	}
 
-	rmInstruction(builder, false, operandSize, []byte{0x23}, dest, src)
+	newRM(false, operandSize, []byte{0x23}, dest, src).encode(builder)
 }
 
 // <int/uint dest> &= <int/uint immediate>
@@ -70,5 +70,5 @@ func andIntImmediate(
 		opCode = []byte{0x80}
 	}
 
-	miInstruction(builder, isUnsigned, operandSize, opCode, 4, dest, immediate)
+	newMI(isUnsigned, operandSize, opCode, 4, dest, immediate).encode(builder)
 }

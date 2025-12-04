@@ -33,5 +33,5 @@ func not(
 		operandSize = 4
 	}
 
-	mInstruction(builder, operandSize, []byte{0xF7}, 2, dest)
+	newM(operandSize, []byte{0xF7}, 2, dest).encode(builder)
 }

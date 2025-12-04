@@ -32,7 +32,7 @@ func negSignedInt(
 		opCode = []byte{0xF6}
 	}
 
-	mInstruction(builder, operandSize, opCode, 3, dest)
+	newM(operandSize, opCode, 3, dest).encode(builder)
 }
 
 // <float dest> = -<float src>
