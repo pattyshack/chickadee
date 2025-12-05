@@ -102,7 +102,7 @@ func TestShrUint64(t *testing.T) {
 func TestShrInt8Immediate(t *testing.T) {
 	// sar r14b, 1
 	builder := layout.NewSegmentBuilder()
-	shrIntImmediate(builder, ir.Int8, registers.R14, []byte{1})
+	shrIntImmediate(builder, ir.Int8, registers.R14, 1)
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x41, 0xc0, 0xfe, 1}, segment.Content.Flatten())
@@ -113,7 +113,7 @@ func TestShrInt8Immediate(t *testing.T) {
 func TestShrInt16Immediate(t *testing.T) {
 	// sar si, 2
 	builder := layout.NewSegmentBuilder()
-	shrIntImmediate(builder, ir.Int16, registers.Rsi, []byte{2})
+	shrIntImmediate(builder, ir.Int16, registers.Rsi, 2)
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x66, 0xc1, 0xfe, 2}, segment.Content.Flatten())
@@ -124,7 +124,7 @@ func TestShrInt16Immediate(t *testing.T) {
 func TestShrInt32Immediate(t *testing.T) {
 	// sar ebx, 3
 	builder := layout.NewSegmentBuilder()
-	shrIntImmediate(builder, ir.Int32, registers.Rbx, []byte{3})
+	shrIntImmediate(builder, ir.Int32, registers.Rbx, 3)
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0xc1, 0xfb, 3}, segment.Content.Flatten())
@@ -135,7 +135,7 @@ func TestShrInt32Immediate(t *testing.T) {
 func TestShrInt64Immediate(t *testing.T) {
 	// sar rcx, 4
 	builder := layout.NewSegmentBuilder()
-	shrIntImmediate(builder, ir.Int64, registers.Rcx, []byte{4})
+	shrIntImmediate(builder, ir.Int64, registers.Rcx, 4)
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x48, 0xc1, 0xf9, 4}, segment.Content.Flatten())
@@ -146,7 +146,7 @@ func TestShrInt64Immediate(t *testing.T) {
 func TestShrUint8Immediate(t *testing.T) {
 	// shr al, 5
 	builder := layout.NewSegmentBuilder()
-	shrIntImmediate(builder, ir.Uint8, registers.Rax, []byte{5})
+	shrIntImmediate(builder, ir.Uint8, registers.Rax, 5)
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0xc0, 0xe8, 5}, segment.Content.Flatten())
@@ -157,7 +157,7 @@ func TestShrUint8Immediate(t *testing.T) {
 func TestShrUint16Immediate(t *testing.T) {
 	// shr dx, 6
 	builder := layout.NewSegmentBuilder()
-	shrIntImmediate(builder, ir.Uint16, registers.Rdx, []byte{6})
+	shrIntImmediate(builder, ir.Uint16, registers.Rdx, 6)
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x66, 0xc1, 0xea, 6}, segment.Content.Flatten())
@@ -168,7 +168,7 @@ func TestShrUint16Immediate(t *testing.T) {
 func TestShrUint32Immediate(t *testing.T) {
 	// shr r10d, 7
 	builder := layout.NewSegmentBuilder()
-	shrIntImmediate(builder, ir.Uint32, registers.R10, []byte{7})
+	shrIntImmediate(builder, ir.Uint32, registers.R10, 7)
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x41, 0xc1, 0xea, 7}, segment.Content.Flatten())
@@ -179,7 +179,7 @@ func TestShrUint32Immediate(t *testing.T) {
 func TestShrUint64Immediate(t *testing.T) {
 	// shr r8, 8
 	builder := layout.NewSegmentBuilder()
-	shrIntImmediate(builder, ir.Uint64, registers.R8, []byte{8})
+	shrIntImmediate(builder, ir.Uint64, registers.R8, 8)
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x49, 0xc1, 0xe8, 8}, segment.Content.Flatten())

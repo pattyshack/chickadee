@@ -1,7 +1,9 @@
 package instructions
 
 import (
+	"encoding/binary"
 	"fmt"
+	"math"
 
 	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
@@ -243,27 +245,57 @@ func newMI(
 	opCode []byte,
 	opCodeExtension byte,
 	rm *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // either int64 or uint64, matching isUnsigned
 ) modRMSpec {
-	// NOTE: In general, 64 bit operand support id (4 byte) immediate, but not
-	// io (8 byte) immediate.
-	expectedLength := operandSize
+	if isUnsigned {
+		switch operandSize {
+		case 1:
+			_ = immediate.(uint8)
+		case 2:
+			_ = immediate.(uint16)
+		case 4:
+			_ = immediate.(uint32)
+		case 8:
+			value := immediate.(uint64)
+			// NOTE: immediate are sign extended for 64-bit operand
+			if math.MaxInt32 < value {
+				panic(fmt.Sprintf(
+					"out of bound uint64 sign-extended immediate (%d)",
+					value))
+			}
+		}
+	} else {
+		switch operandSize {
+		case 1:
+			_ = immediate.(int8)
+		case 2:
+			_ = immediate.(int16)
+		case 4:
+			_ = immediate.(int32)
+		case 8:
+			value := immediate.(int64)
+			if value < math.MinInt32 || math.MaxInt32 < value {
+				panic(fmt.Sprintf("out of bound int32 immediate (%d)", value))
+			}
+		}
+	}
+
+	immediateBytes := make([]byte, 8)
+	n, err := binary.Encode(immediateBytes, binary.LittleEndian, immediate)
+	if err != nil {
+		panic(err)
+	}
+	if n != operandSize {
+		panic("should never happen")
+	}
+
 	if operandSize == 8 {
-		expectedLength = 4
+		immediateBytes = immediateBytes[:4]
+	} else {
+		immediateBytes = immediateBytes[:operandSize]
 	}
 
-	if len(immediate) != expectedLength {
-		panic(fmt.Sprintf(
-			"incorrect immediate length (%d != %d)",
-			len(immediate),
-			expectedLength))
-	}
-
-	if operandSize == 8 && isUnsigned && (immediate[3]&0b10000000) != 0 {
-		panic("uint64 immedate not representable by 32-bit signed integer")
-	}
-
-	return _newMI(operandSize, opCode, opCodeExtension, rm, immediate)
+	return _newMI(operandSize, opCode, opCodeExtension, rm, immediateBytes)
 }
 
 // Register-direct addressing ModRM instruction of the form:
@@ -274,13 +306,9 @@ func newMI8(
 	opCode []byte,
 	opCodeExtension byte,
 	rm *architecture.Register,
-	immediate []byte,
+	immediate uint8,
 ) modRMSpec {
-	if len(immediate) != 1 {
-		panic(fmt.Sprintf("incorrect immediate length (%d != 1)", len(immediate)))
-	}
-
-	return _newMI(operandSize, opCode, opCodeExtension, rm, immediate)
+	return _newMI(operandSize, opCode, opCodeExtension, rm, []byte{immediate})
 }
 
 // Register-direct addressing ModRM instruction of the form:

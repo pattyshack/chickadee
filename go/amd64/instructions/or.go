@@ -51,15 +51,15 @@ func orIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int64 or uint64
 ) {
-	isUnsigned := true
+	isUnsigned := false
 	operandSize := 0
 	switch size := simpleType.(type) {
 	case ir.SignedIntType:
 		operandSize = int(size)
 	case ir.UnsignedIntType:
-		isUnsigned = false
+		isUnsigned = true
 		operandSize = int(size)
 	default:
 		panic("should never happen")

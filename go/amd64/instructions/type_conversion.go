@@ -247,7 +247,7 @@ func convertUint64ToFloat(
 	copyGeneral(instructions, 8, scratch, src)
 
 	// <scratch> = <scratch> / 2
-	shrIntImmediate(instructions, ir.Uint64, scratch, []byte{1})
+	shrIntImmediate(instructions, ir.Uint64, scratch, 1)
 
 	// <src> = <src> % 2
 	andIntImmediate(instructions, ir.Uint32, src, []byte{1, 0, 0, 0})

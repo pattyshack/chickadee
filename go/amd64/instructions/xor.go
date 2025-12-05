@@ -51,7 +51,7 @@ func xorIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int64 or uint64
 ) {
 	isUnsigned := false
 	operandSize := 0

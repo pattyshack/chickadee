@@ -64,7 +64,7 @@ func addIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // either int64 or uint64
 ) {
 	isUnsigned := false
 	operandSize := 0

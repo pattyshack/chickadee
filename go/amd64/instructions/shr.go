@@ -55,7 +55,7 @@ func shrIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,
-	immediate []byte,
+	immediate uint8,
 ) {
 	operandSize := 0
 	ext := byte(7)

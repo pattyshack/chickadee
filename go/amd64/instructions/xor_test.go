@@ -102,7 +102,7 @@ func TestXorUint64(t *testing.T) {
 func TestXorInt8Immediate(t *testing.T) {
 	// xor bl, 0x12
 	builder := layout.NewSegmentBuilder()
-	xorIntImmediate(builder, ir.Int8, registers.Rbx, []byte{0x12})
+	xorIntImmediate(builder, ir.Int8, registers.Rbx, int8(0x12))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x80, 0xf3, 0x12}, segment.Content.Flatten())
@@ -113,7 +113,7 @@ func TestXorInt8Immediate(t *testing.T) {
 func TestXorInt16Immediate(t *testing.T) {
 	// xor bx, 0x1234
 	builder := layout.NewSegmentBuilder()
-	xorIntImmediate(builder, ir.Int16, registers.Rbx, []byte{0x34, 0x12})
+	xorIntImmediate(builder, ir.Int16, registers.Rbx, int16(0x1234))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -131,7 +131,7 @@ func TestXorInt32Immediate(t *testing.T) {
 		builder,
 		ir.Int32,
 		registers.Rbx,
-		[]byte{0x78, 0x56, 0x34, 0x12})
+		int32(0x12345678))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -149,7 +149,7 @@ func TestXorInt64Immediate(t *testing.T) {
 		builder,
 		ir.Int64,
 		registers.Rbx,
-		[]byte{0x9a, 0x78, 0x56, 0x34})
+		int64(0x3456789a))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -163,7 +163,7 @@ func TestXorInt64Immediate(t *testing.T) {
 func TestXorUint8Immediate(t *testing.T) {
 	// xor sil, 0x12
 	builder := layout.NewSegmentBuilder()
-	xorIntImmediate(builder, ir.Uint8, registers.Rsi, []byte{0x12})
+	xorIntImmediate(builder, ir.Uint8, registers.Rsi, uint8(0x12))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x40, 0x80, 0xf6, 0x12}, segment.Content.Flatten())
@@ -174,7 +174,7 @@ func TestXorUint8Immediate(t *testing.T) {
 func TestXorUint16Immediate(t *testing.T) {
 	// xor si, 0x1234
 	builder := layout.NewSegmentBuilder()
-	xorIntImmediate(builder, ir.Uint16, registers.Rsi, []byte{0x34, 0x12})
+	xorIntImmediate(builder, ir.Uint16, registers.Rsi, uint16(0x1234))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -192,7 +192,7 @@ func TestXorUint32Immediate(t *testing.T) {
 		builder,
 		ir.Uint32,
 		registers.Rsi,
-		[]byte{0x78, 0x56, 0x34, 0x12})
+		uint32(0x12345678))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -210,7 +210,7 @@ func TestXorUint64Immediate(t *testing.T) {
 		builder,
 		ir.Uint64,
 		registers.Rsi,
-		[]byte{0x9a, 0x78, 0x56, 0x34})
+		uint64(0x3456789a))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(

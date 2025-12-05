@@ -321,7 +321,7 @@ func TestSubFloat64(t *testing.T) {
 func TestSubInt8Immediate(t *testing.T) {
 	// sub cl, 0x12
 	builder := layout.NewSegmentBuilder()
-	subIntImmediate(builder, ir.Int8, registers.Rcx, []byte{0x12})
+	subIntImmediate(builder, ir.Int8, registers.Rcx, int8(0x12))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x80, 0xe9, 0x12}, segment.Content.Flatten())
@@ -332,7 +332,7 @@ func TestSubInt8Immediate(t *testing.T) {
 func TestSubInt16Immediate(t *testing.T) {
 	// sub cx, 0x1234
 	builder := layout.NewSegmentBuilder()
-	subIntImmediate(builder, ir.Int16, registers.Rcx, []byte{0x34, 0x12})
+	subIntImmediate(builder, ir.Int16, registers.Rcx, int16(0x1234))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -350,7 +350,7 @@ func TestSubInt32Immediate(t *testing.T) {
 		builder,
 		ir.Int32,
 		registers.Rcx,
-		[]byte{0x78, 0x56, 0x34, 0x12})
+		int32(0x12345678))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -368,7 +368,7 @@ func TestSubInt64Immediate(t *testing.T) {
 		builder,
 		ir.Int64,
 		registers.Rcx,
-		[]byte{0x9a, 0x78, 0x56, 0x34})
+		int64(0x3456789a))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -382,7 +382,7 @@ func TestSubInt64Immediate(t *testing.T) {
 func TestSubUint8Immediate(t *testing.T) {
 	// sub r12b, 0x12
 	builder := layout.NewSegmentBuilder()
-	subIntImmediate(builder, ir.Uint8, registers.R12, []byte{0x12})
+	subIntImmediate(builder, ir.Uint8, registers.R12, uint8(0x12))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x41, 0x80, 0xec, 0x12}, segment.Content.Flatten())
@@ -393,7 +393,7 @@ func TestSubUint8Immediate(t *testing.T) {
 func TestSubUint16Immediate(t *testing.T) {
 	// sub r12w, 0x1234
 	builder := layout.NewSegmentBuilder()
-	subIntImmediate(builder, ir.Uint16, registers.R12, []byte{0x34, 0x12})
+	subIntImmediate(builder, ir.Uint16, registers.R12, uint16(0x1234))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -411,7 +411,7 @@ func TestSubUint32Immediate(t *testing.T) {
 		builder,
 		ir.Uint32,
 		registers.R12,
-		[]byte{0x78, 0x56, 0x34, 0x12})
+		uint32(0x12345678))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -429,7 +429,7 @@ func TestSubUint64Immediate(t *testing.T) {
 		builder,
 		ir.Uint64,
 		registers.R12,
-		[]byte{0x9a, 0x78, 0x56, 0x34})
+		uint64(0x3456789a))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(

@@ -94,7 +94,7 @@ func compareIntImmediate(
 	builder *layout.SegmentBuilder,
 	compareType ir.Type,
 	src *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int64 or uint64
 ) {
 	isUnsigned := false
 	operandSize := 0
