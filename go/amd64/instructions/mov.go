@@ -15,19 +15,19 @@ import (
 // 8/16/32/64-bit (RM Op/En): 8B /r (32/64-bit variants)
 func copyGeneral(
 	builder *layout.SegmentBuilder,
+	destSize int,
 	dest *architecture.Register,
-	srcSize int,
 	src *architecture.Register,
 ) {
 	if src.Encoding == dest.Encoding { // no-op
 		return
 	}
 
-	if srcSize != 8 {
-		srcSize = 4
+	if destSize != 8 {
+		destSize = 4
 	}
 
-	newRM(false, srcSize, []byte{0x8B}, dest, src).encode(builder)
+	newRM(false, destSize, []byte{0x8B}, dest, src).encode(builder)
 }
 
 // [<address>] = <general src>
@@ -38,16 +38,16 @@ func copyGeneral(
 // 16/32/64-bit (MR Op/En): 89 /r
 func copyGeneralToMemory(
 	builder *layout.SegmentBuilder,
+	destSize int,
 	destAddress *architecture.Register,
-	srcSize int,
 	src *architecture.Register,
 ) {
 	opCode := []byte{0x89}
-	if srcSize == 1 {
+	if destSize == 1 {
 		opCode = []byte{0x88}
 	}
 
-	newIndirectRM(false, srcSize, opCode, src, destAddress).encode(builder)
+	newIndirectRM(false, destSize, opCode, src, destAddress).encode(builder)
 }
 
 // <general dest> = [<address>]
@@ -58,16 +58,16 @@ func copyGeneralToMemory(
 // 16/32/64-bit (RM Op/En): 8B /r
 func copyMemoryToGeneral(
 	builder *layout.SegmentBuilder,
+	destSize int,
 	dest *architecture.Register,
-	srcSize int,
 	srcAddress *architecture.Register,
 ) {
 	opCode := []byte{0x8B}
-	if srcSize == 1 {
+	if destSize == 1 {
 		opCode = []byte{0x8A}
 	}
 
-	newIndirectRM(false, srcSize, opCode, dest, srcAddress).encode(builder)
+	newIndirectRM(false, destSize, opCode, dest, srcAddress).encode(builder)
 }
 
 // <float dest> = <float src>
@@ -78,15 +78,15 @@ func copyMemoryToGeneral(
 // 32/64-bit (A Op/En): 0F 10 /r
 func copyFloat(
 	builder *layout.SegmentBuilder,
+	destSize int,
 	dest *architecture.Register,
-	srcSize int,
 	src *architecture.Register,
 ) {
 	if src.Encoding == dest.Encoding { // no-op
 		return
 	}
 
-	newRM(true, srcSize, []byte{0x0F, 0x10}, dest, src).encode(builder)
+	newRM(true, destSize, []byte{0x0F, 0x10}, dest, src).encode(builder)
 }
 
 // [<address>] = <float src>
@@ -97,13 +97,13 @@ func copyFloat(
 // 64-bit (B Op/En): 66 REX.W OF 7E /r
 func copyFloatToMemory(
 	builder *layout.SegmentBuilder,
+	destSize int,
 	destAddress *architecture.Register,
-	srcSize int,
 	src *architecture.Register,
 ) {
 	newIndirectRM(
 		true,
-		srcSize,
+		destSize,
 		[]byte{0x0F, 0x7E},
 		src,
 		destAddress,
@@ -118,13 +118,13 @@ func copyFloatToMemory(
 // 64-bit (A Op/En): 66 REX.W OF 6E /r
 func copyMemoryToFloat(
 	builder *layout.SegmentBuilder,
+	destSize int,
 	dest *architecture.Register,
-	srcSize int,
 	srcAddress *architecture.Register,
 ) {
 	newIndirectRM(
 		true,
-		srcSize,
+		destSize,
 		[]byte{0x0F, 0x6E},
 		dest,
 		srcAddress,
@@ -137,27 +137,27 @@ func copyMemoryToFloat(
 //
 // NOTE: we'll use 32-bit variant when possible.
 //
-// 8/16/32-bit src (B Op/En): 66 0F 7E /r
-// 64-bit src (B Op/En):      66 REX.W 0F 7E /r
+// 8/16/32-bit dest (B Op/En): 66 0F 7E /r
+// 64-bit dest (B Op/En):      66 REX.W 0F 7E /r
 func copyFloatToGeneral(
 	builder *layout.SegmentBuilder,
+	destSize int,
 	dest *architecture.Register,
-	srcSize int,
 	src *architecture.Register,
 ) {
 	if !dest.AllowGeneralOperations || !src.AllowFloatOperations {
 		panic("invalid registers")
 	}
 
-	if srcSize < 4 {
-		srcSize = 4
+	if destSize < 8 {
+		destSize = 4
 	}
 
 	// NOTE: this uses int64 style MR Op/En (src before	dest) encoding, plus
 	// operand size prefix.
 	spec := _newRMI(
 		false,
-		srcSize,
+		destSize,
 		[]byte{0x0F, 0x7E},
 		src,
 		dest,
@@ -170,29 +170,23 @@ func copyFloatToGeneral(
 //
 // https://www.felixcloutier.com/x86/movd:movq
 //
-// NOTE: we'll use 32-bit variant when possible
-//
-// 8/16/32-bit src (A Op/En): 66 0F 6E /r
-// 64-bit src (A Op/En):      66 REX.W 0F 6E /r
+// 32-bit dest (A Op/En): 66 0F 6E /r
+// 64-bit dest (A Op/En): 66 REX.W 0F 6E /r
 func copyGeneralToFloat(
 	builder *layout.SegmentBuilder,
+	destSize int,
 	dest *architecture.Register,
-	srcSize int,
 	src *architecture.Register,
 ) {
 	if !src.AllowGeneralOperations || !dest.AllowFloatOperations {
 		panic("invalid registers")
 	}
 
-	if srcSize < 4 {
-		srcSize = 4
-	}
-
 	// NOTE: this uses int64 style RM Op/En (dest before src) encoding, plus
 	// operand size prefix.
 	spec := _newRMI(
 		false,
-		srcSize,
+		destSize,
 		[]byte{0x0F, 0x6E},
 		dest,
 		src,

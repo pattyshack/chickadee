@@ -25,7 +25,7 @@ func convertIntToInt(
 		// NOTE: when dest size is smaller than src size, the src's upper bytes
 		// may be copied to dest, but the dest type will ignore those bytes,
 		// effectively truncated the value.
-		copyGeneral(builder, dest, srcSize, src)
+		copyGeneral(builder, destSize, dest, src)
 	}
 }
 
@@ -48,7 +48,7 @@ func convertFloatToFloat(
 	destSize := destType.Size()
 	srcSize := srcType.Size()
 	if srcSize == destSize {
-		copyFloat(builder, dest, srcSize, src)
+		copyFloat(builder, destSize, dest, src)
 	} else {
 		newRM(true, srcSize, []byte{0x0F, 0x5A}, dest, src).encode(builder)
 	}
@@ -245,7 +245,7 @@ func convertUint64ToFloat(
 	//
 
 	// <scratch> = <src>
-	copyGeneral(instructions, scratch, 8, src)
+	copyGeneral(instructions, 8, scratch, src)
 
 	// <scratch> = <scratch> / 2
 	shrIntImmediate(instructions, ir.Uint64, scratch, []byte{1, 0, 0, 0})
