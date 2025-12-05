@@ -40,7 +40,7 @@ var (
 //
 // 64-bit:
 //
-//	xor rdx, rdx                 | cqo
+//	xor edx, edx                 | cqo
 //	div <divisor>q               | idiv <divisor>q
 //
 // https://www.felixcloutier.com/x86/cwd:cdq:cqo
@@ -69,7 +69,8 @@ func divRemInt(
 			size = 4
 		}
 
-		xor(builder, size, registers.Rdx, registers.Rdx)
+		// TODO: switch to setImmediate
+		xor(builder, ir.Int32, registers.Rdx, registers.Rdx)
 
 		// div
 		newM(int(size), []byte{0xF7}, 6, divisor).encode(builder)
