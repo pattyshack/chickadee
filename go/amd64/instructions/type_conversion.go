@@ -160,10 +160,12 @@ func convertSmallUintToFloat(
 	}
 
 	extendedSize := 4
+	requireRexWBit := false
 	switch int(srcType.(ir.UnsignedIntType)) {
 	case 1, 2: // use 32-bit operand variant
 	case 4:
 		extendedSize = 8
+		requireRexWBit = true
 	default: // uint64 is handled differently
 		panic("should never happen")
 	}
@@ -177,10 +179,7 @@ func convertSmallUintToFloat(
 		dest,
 		src,
 		nil)
-
-	if srcType.Size() == 8 {
-		spec.requireRexWBit = true
-	}
+	spec.requireRexWBit = requireRexWBit
 
 	spec.encode(builder)
 }
@@ -248,7 +247,7 @@ func convertUint64ToFloat(
 	copyGeneral(instructions, 8, scratch, src)
 
 	// <scratch> = <scratch> / 2
-	shrIntImmediate(instructions, ir.Uint64, scratch, []byte{1, 0, 0, 0})
+	shrIntImmediate(instructions, ir.Uint64, scratch, []byte{1})
 
 	// <src> = <src> % 2
 	andIntImmediate(instructions, ir.Uint32, src, []byte{1, 0, 0, 0})

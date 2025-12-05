@@ -285,7 +285,12 @@ func _extendUnsignedInt(
 
 	destSize = 4 // see above NOTE
 
-	newRM(false, destSize, opCode, dest, src).encode(builder)
+	spec := newRM(false, destSize, opCode, dest, src)
+	if srcSize == 1 {
+		spec.maybeSetRexPrefix(src.Encoding)
+	}
+
+	spec.encode(builder)
 }
 
 // <extended int dest> = <int src>
