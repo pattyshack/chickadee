@@ -364,6 +364,18 @@ func newIndirectRM(
 		if !reg.AllowGeneralOperations {
 			panic("invalid register")
 		}
+
+		switch operandSize {
+		case 1:
+			spec.maybeSetRexPrefix(reg.Encoding)
+		case 2:
+			spec.requireOperandSizePrefix = true
+		case 4:
+		case 8:
+			spec.requireRexWBit = true
+		default:
+			panic("invalid register")
+		}
 	}
 
 	if !rm.AllowGeneralOperations {
@@ -402,7 +414,6 @@ func newIndirectRM(
 // (mov) OI Op/En: <opCode + rd (w)> <ib|iw|id|io>
 func oiInstruction(
 	builder *layout.SegmentBuilder,
-	operandSize int,
 	baseOpCode byte,
 	register *architecture.Register,
 	immediate []byte,
@@ -411,23 +422,12 @@ func oiInstruction(
 		panic("invalid register")
 	}
 
-	switch operandSize {
-	case 1, 2, 4, 8:
-		// ok
-	default:
-		panic("unexpected operand size")
-	}
-
-	if len(immediate) != operandSize {
-		panic("unexpected immediate length")
-	}
-
 	// +3 for 16-bit prefix, rex prefix, opCode
 	instruction := make([]byte, 0, 3+len(immediate))
 
 	requireRex := false
 	rex := rexPrefix
-	switch operandSize {
+	switch len(immediate) {
 	case 1:
 		// NOTE: rex makes AH/CH/DH/BH inaccessible for 8-bit operand
 		requireRex = 4 <= register.Encoding && register.Encoding <= 7

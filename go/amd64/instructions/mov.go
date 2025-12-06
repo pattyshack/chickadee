@@ -1,6 +1,8 @@
 package instructions
 
 import (
+	"encoding/binary"
+
 	"github.com/pattyshack/chickadee/ir"
 	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
@@ -208,16 +210,48 @@ func copyGeneralToFloat(
 func setIntImmediate(
 	builder *layout.SegmentBuilder,
 	dest *architecture.Register, // general register
-	immediate []byte,
+	immediate interface{}, // int* or uint*
 ) {
-	operandSize := len(immediate)
+	isZero := false
+	switch value := immediate.(type) {
+	case int8:
+		isZero = value == 0
+	case int16:
+		isZero = value == 0
+	case int32:
+		isZero = value == 0
+	case int64:
+		isZero = value == 0
+	case uint8:
+		isZero = value == 0
+	case uint16:
+		isZero = value == 0
+	case uint32:
+		isZero = value == 0
+	case uint64:
+		isZero = value == 0
+	default:
+		panic("should never happen")
+	}
+
+	if isZero {
+		xor(builder, ir.Int32, dest, dest)
+		return
+	}
+
+	immediateBytes := make([]byte, 8)
+	n, err := binary.Encode(immediateBytes, binary.LittleEndian, immediate)
+	if err != nil {
+		panic(err)
+	}
+	immediateBytes = immediateBytes[:n]
 
 	baseOpCode := byte(0xB8)
-	if operandSize == 1 {
+	if n == 1 {
 		baseOpCode = 0xB0
 	}
 
-	oiInstruction(builder, operandSize, baseOpCode, dest, immediate)
+	oiInstruction(builder, baseOpCode, dest, immediateBytes)
 }
 
 // <extended int/uint dest> = <int/uint src>
