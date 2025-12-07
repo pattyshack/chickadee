@@ -7,11 +7,9 @@ import (
 )
 
 var (
-	// 0x8000000000000000
-	float64SignMaskBytes = []byte{0, 0, 0, 0, 0, 0, 0, 0x80}
+	float64SignMask = uint64(0x8000000000000000)
 
-	// 0x80000000
-	float32SignMaskBytes = []byte{0, 0, 0, 0x80}
+	float32SignMask = uint32(0x80000000)
 )
 
 // <int dest> = -<int dest>
@@ -35,9 +33,9 @@ func negSignedInt(
 	newM(operandSize, opCode, 3, dest).encode(builder)
 }
 
-// <float dest> = -<float src>
+// <float32 dest> = -<float32 dest>
 //
-// (NOTE: dest and src are distinct GENERAL, not float, registers)
+// (NOTE: dest is GENERAL, not float, register)
 //
 // gcc computes float negation by xor-ing against a negation mask constant
 // written to .rodata, which simply flips the float's sign bit (snippet from
@@ -46,32 +44,48 @@ func negSignedInt(
 //	negFloat(float):
 //	        xorps   xmm0, XMMWORD PTR .LC0[rip]
 //	        ret
-//	negDouble(double):
-//	        xorpd   xmm0, XMMWORD PTR .LC1[rip]
-//	        ret
 //	.LC0:
 //	        .long   -2147483648
 //	        .long   0
 //	        .long   0
 //	        .long   0
+//
+// float32's mask (.LC0): -2147483648 = 0x80000000
+//
+// Instead of loading the mask from memory.  We'll utilize general registers
+// to flip the sign bit.  This enables us to encode the mask immediate
+// directly into the instructions.
+func negFloat32(
+	builder *layout.SegmentBuilder,
+	dest *architecture.Register, // general, not float, register
+) {
+	xorIntImmediate(builder, ir.Uint32, dest, float32SignMask)
+}
+
+// <float64 dest> = -<float64 src>
+//
+// (NOTE: dest and src are distinct GENERAL, not float, registers)
+//
+// gcc computes float negation by xor-ing against a negation mask constant
+// written to .rodata, which simply flips the float's sign bit (snippet from
+// godbolt):
+//
+//	negDouble(double):
+//	        xorpd   xmm0, XMMWORD PTR .LC1[rip]
+//	        ret
 //	.LC1:
 //	        .long   0
 //	        .long   -2147483648
 //	        .long   0
 //	        .long   0
 //
-// float32's mask (.LC0): -2147483648 = 0x80000000
 // float64's mask (.LC1): (-2147483648, 0) = 0x8000000000000000
 //
 // Instead of loading the mask from memory.  We'll utilize general registers
 // to flip the sign bit.  This enables us to encode the mask immediate
 // directly into the instructions.
-//
-// Aside: Since xor supports 32-bit immediate, we can in theory implement
-// float32 negation using a single register.  We can't do the same for float64.
-func negFloat(
+func negFloat64(
 	builder *layout.SegmentBuilder,
-	simpleType ir.Type,
 	dest *architecture.Register, // general, not float, register
 	src *architecture.Register, // general, not float, register
 ) {
@@ -79,19 +93,6 @@ func negFloat(
 		panic("registers must be distinct")
 	}
 
-	var xorType ir.Type
-	var maskBytes []byte
-	switch simpleType.(ir.FloatType) {
-	case ir.Float32:
-		xorType = ir.Uint32
-		maskBytes = float32SignMaskBytes
-	case ir.Float64:
-		xorType = ir.Uint64
-		maskBytes = float64SignMaskBytes
-	default:
-		panic("should never happen")
-	}
-
-	setIntImmediate(builder, dest, maskBytes)
-	xor(builder, xorType, dest, src)
+	setIntImmediate(builder, dest, float64SignMask)
+	xor(builder, ir.Uint64, dest, src)
 }
