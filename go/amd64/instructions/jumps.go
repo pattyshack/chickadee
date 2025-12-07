@@ -58,7 +58,7 @@ func compare(
 	// NOTE: we can't use the newRM function since the float operations encoding
 	// behave more like 32/16-bit int RM Op/En instructions.
 
-	if !src1.AllowFloatOperations || src2.AllowFloatOperations {
+	if !src1.AllowFloatOperations || !src2.AllowFloatOperations {
 		panic("invalid register")
 	}
 
@@ -94,7 +94,7 @@ func compareIntImmediate(
 	builder *layout.SegmentBuilder,
 	compareType ir.Type,
 	src *architecture.Register,
-	immediate interface{}, // int64 or uint64
+	immediate interface{}, // int* or uint*
 ) {
 	isUnsigned := false
 	operandSize := 0
@@ -142,7 +142,7 @@ func jeIntImmediate(
 	label string,
 	compareType ir.Type,
 	src *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int* or uint*
 ) {
 	compareIntImmediate(builder, compareType, src, immediate)
 	d32Instruction(builder, []byte{0x0F, 0x84}, layout.BasicBlockKind, label)
@@ -174,7 +174,7 @@ func jneIntImmediate(
 	label string,
 	compareType ir.Type,
 	src *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int* or uint*
 ) {
 	compareIntImmediate(builder, compareType, src, immediate)
 	d32Instruction(builder, []byte{0x0F, 0x85}, layout.BasicBlockKind, label)
@@ -216,7 +216,7 @@ func jltIntImmediate(
 	label string,
 	compareType ir.Type,
 	src *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int* or uint*
 ) {
 	var opCode []byte
 	switch compareType.(type) {
@@ -266,7 +266,7 @@ func jleIntImmediate(
 	label string,
 	compareType ir.Type,
 	src *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int* or uint*
 ) {
 	var opCode []byte
 	switch compareType.(type) {
@@ -316,7 +316,7 @@ func jgtIntImmediate(
 	label string,
 	compareType ir.Type,
 	src *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int* or uint*
 ) {
 	var opCode []byte
 	switch compareType.(type) {
@@ -366,7 +366,7 @@ func jgeIntImmediate(
 	label string,
 	compareType ir.Type,
 	src *architecture.Register,
-	immediate []byte,
+	immediate interface{}, // int* or uint*
 ) {
 	var opCode []byte
 	switch compareType.(type) {
