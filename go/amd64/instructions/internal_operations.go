@@ -32,15 +32,20 @@ func computeSymbolAddress(
 		panic("invalid offset")
 	}
 
+	if !dest.AllowGeneralOperations {
+		panic("invalid register")
+	}
+
 	// NOTE: We need to use indirectDisp0ModRMMode (00) and set r/m to rbp in
 	// order to access [RIP + disp32] computation.  We'll encode the second half
 	// of the instruction (displacement) separately.
-	spec := newIndirectRM(
-		false, // isFloat
-		8,     // address size
+	spec := newRMI(
+		false,
+		8, // address size
 		[]byte{0x8D},
 		dest,
-		registers.Rbp)
+		registers.Rbp,
+		nil)
 	spec.mode = indirectDisp0ModRMMode
 	spec.encode(builder)
 
@@ -130,19 +135,13 @@ func _updateStack(
 		return
 	}
 
-	immediate := make([]byte, 4)
-	_, err := binary.Encode(immediate, binary.LittleEndian, size)
-	if err != nil {
-		panic(err)
-	}
-
 	spec := newMI(
 		false, // isUnsigned
 		8,     // address size
-		[]byte{81},
+		[]byte{0x81},
 		0,             // op code extension
 		registers.Rax, // placeholder for rsp
-		immediate)
+		int64(size))
 	spec.rm = registers.RspEncoding
 	spec.encode(builder)
 }
@@ -155,7 +154,7 @@ func allocateStackFrame(
 		panic("invalid stack frame size")
 	}
 
-	_updateStack(builder, size)
+	_updateStack(builder, -size)
 }
 
 func deallocateStackFrame(
@@ -166,5 +165,5 @@ func deallocateStackFrame(
 		panic("invalid stack frame size")
 	}
 
-	_updateStack(builder, -size)
+	_updateStack(builder, size)
 }
