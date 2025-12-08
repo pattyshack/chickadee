@@ -690,9 +690,99 @@ func TestUint32ToFloat64(t *testing.T) {
 }
 
 func TestUint64ToFloat32(t *testing.T) {
-	// TODO
+	builder := layout.NewSegmentBuilder()
+	convertUint64ToFloat(
+		builder,
+		ir.Float32,
+		registers.Xmm7,
+		registers.Rcx,
+		registers.Rdx)
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			// comparison basic block
+
+			// 0: cmp rcx, 0
+			0x48, 0x81, 0xf9, 0x00, 0x00, 0x00, 0x00,
+			// 7: jge <nonNegative offset> (= 43 - 13 = 30 = 0x1e)
+			0x0f, 0x8d, 0x1e, 0x00, 0x00, 0x00,
+
+			// negative branch basic block
+
+			// 13: mov rdx, rcx
+			0x48, 0x8b, 0xd1,
+			// 16: shr rdx, 1
+			0x48, 0xc1, 0xea, 0x01,
+			// 20: and ecx, 1
+			0x81, 0xe1, 0x01, 0x00, 0x00, 0x00,
+			// 26: or rcx, rdx
+			0x48, 0x0b, 0xca,
+			// 29: cvtsi2ss xmm7, rcx
+			0xf3, 0x48, 0x0f, 0x2a, 0xf9,
+			// 34: addss xmm7, xmm7
+			0xf3, 0x0f, 0x58, 0xff,
+			// 38: jmp <end offset> (= 48 - 43 = 5)
+			0xe9, 0x05, 0x00, 0x00, 0x00,
+
+			// non-negative branch basic block
+
+			// 43: cvtsi2ss xmm7, rcx
+			0xf3, 0x48, 0x0f, 0x2a, 0xf9,
+
+			// 48: end basic block
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
 }
 
 func TestUint64ToFloat64(t *testing.T) {
-	// TODO
+	builder := layout.NewSegmentBuilder()
+	convertUint64ToFloat(
+		builder,
+		ir.Float64,
+		registers.Xmm4,
+		registers.Rbx,
+		registers.Rdi)
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			// comparison basic block
+
+			// 0: cmp rbx, 0
+			0x48, 0x81, 0xfb, 0x00, 0x00, 0x00, 0x00,
+			// 7: jge <nonNegative offset> (= 43 - 13 = 30 = 0x1e)
+			0x0f, 0x8d, 0x1e, 0x00, 0x00, 0x00,
+
+			// negative branch basic block
+
+			// 13: mov rdi, rbx
+			0x48, 0x8b, 0xfb,
+			// 16: shr rdi, 1
+			0x48, 0xc1, 0xef, 0x01,
+			// 20: and ebx, 1
+			0x81, 0xe3, 0x01, 0x00, 0x00, 0x00,
+			// 26: or rbx, rdi
+			0x48, 0x0b, 0xdf,
+			// 29: cvtsi2sd xmm7, rbx
+			0xf2, 0x48, 0x0f, 0x2a, 0xe3,
+			// 34: addsd xmm4, xmm4
+			0xf2, 0x0f, 0x58, 0xe4,
+			// 38: jmp <end offset> (= 48 - 43 = 5)
+			0xe9, 0x05, 0x00, 0x00, 0x00,
+
+			// non-negative branch basic block
+
+			// 43: cvtsi2sd xmm4, rbx
+			0xf2, 0x48, 0x0f, 0x2a, 0xe3,
+
+			// 48: end basic block
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
 }

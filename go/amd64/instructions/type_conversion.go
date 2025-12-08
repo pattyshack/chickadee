@@ -194,18 +194,18 @@ func convertSmallUintToFloat(
 // work around the sign bit (this matches gcc behavior).
 //
 //	if int64(src) >= 0 {
-//		  cvtsi2s* <src>  // can directly convert to float
-//		} else {  // work around sign bit via 2*ceil(src/2)
+//		cvtsi2s* <src>  // can directly convert to float
+//	} else {  // work around sign bit via 2*ceil(src/2)
 //
-//		  <scratch> = <src>
-//		  <scratch> = shr <scratch>, 1 // divide by 2
-//		  <src> = and <src>, 1         // the remainder when divided by 2
-//		  <src> = or <src>, <scratch>  // round up src
+//	  <scratch> = <src>
+//	  <scratch> = shr <scratch>, 1 // divide by 2
+//	  <src> = and <src>, 1         // the remainder when divided by 2
+//	  <src> = or <src>, <scratch>  // round up src
 //
-//		  <dest> = [cvtsi2s*] <src>
+//	  <dest> = [cvtsi2s*] <src>
 //
-//		  <dest> = add <dest> <dest> // dest = 2 * dest
-//		}
+//	  <dest> = add <dest> <dest> // dest = 2 * dest
+//	}
 //
 // https://www.felixcloutier.com/x86/cvtsi2ss
 // https://www.felixcloutier.com/x86/cvtsi2sd
@@ -237,7 +237,7 @@ func convertUint64ToFloat(
 	instructions := layout.NewSegmentBuilder()
 
 	// if int64(src) >= 0
-	jgeIntImmediate(instructions, nonNegative, ir.Int64, src, []byte{0, 0, 0, 0})
+	jgeIntImmediate(instructions, nonNegative, ir.Int64, src, int64(0))
 
 	//
 	// negative src branch
@@ -250,7 +250,7 @@ func convertUint64ToFloat(
 	shrIntImmediate(instructions, ir.Uint64, scratch, 1)
 
 	// <src> = <src> % 2
-	andIntImmediate(instructions, ir.Uint32, src, []byte{1, 0, 0, 0})
+	andIntImmediate(instructions, ir.Uint32, src, uint32(1))
 
 	// round up <src>
 	or(instructions, ir.Uint64, src, scratch)
