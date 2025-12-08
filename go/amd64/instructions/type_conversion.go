@@ -105,6 +105,9 @@ func convertFloatToInt(
 //
 // 8/16/32-bit src cvtsi2ss/cvtsi2sd (A Op/En): 0F 2A /r
 // 64-bit src cvtsi2ss/cvtsi2sd (A Op/En):      REX.W 0F 2A /r
+//
+// XXX: maybe add pxor for int to float conversion
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=89071
 func convertSignedIntToFloat(
 	builder *layout.SegmentBuilder,
 	destType ir.Type,
@@ -148,6 +151,9 @@ func convertSignedIntToFloat(
 //
 // 8/16/32-bit src cvtsi2ss/cvtsi2sd (A Op/En): 0F 2A /r
 // 64-bit src cvtsi2ss/cvtsi2sd (A Op/En):      REX.W 0F 2A /r
+//
+// XXX: maybe add pxor for int to float conversion
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=89071
 func convertSmallUintToFloat(
 	builder *layout.SegmentBuilder,
 	destType ir.Type,
@@ -211,6 +217,9 @@ func convertSmallUintToFloat(
 // https://www.felixcloutier.com/x86/cvtsi2sd
 //
 // 64-bit src cvtsi2ss/cvtsi2sd (A Op/En):      REX.W 0F 2A /r
+//
+// XXX: maybe add pxor for int to float conversion
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=89071
 func convertUint64ToFloat(
 	builder *layout.SegmentBuilder,
 	destType ir.Type,
@@ -320,8 +329,8 @@ func convertUint64ToFloat(
 		panic("should never happen")
 	}
 
+	// Drop nonNegative / end labels
 	segment.Definitions = layout.Definitions{}
-	segment.Relocations = layout.Relocations{}
 
 	builder.Append(segment)
 }
