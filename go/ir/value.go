@@ -1,43 +1,43 @@
 package ir
 
-type Reference interface {
-	isReference()
+type Value interface {
+	isValue()
 
 	Type() Type
 }
 
-// Function reference
-type FunctionReference struct {
+// Function definition reference
+type GlobalFunctionReference struct {
 	Name string
 
 	// Internal
 	FuncType *FunctionType
 }
 
-func (*FunctionReference) isReference() {}
+func (*GlobalFunctionReference) isValue() {}
 
-func (ref *FunctionReference) Type() Type {
+func (ref *GlobalFunctionReference) Type() Type {
 	return ref.FuncType
 }
 
-// Global variable reference
-type AddressReference struct {
+// Global object reference
+type GlobalObjectReference struct {
 	Name string
 
 	// Internal
 	ValueType Type
 }
 
-func (*AddressReference) isReference() {}
+func (*GlobalObjectReference) isValue() {}
 
-func (ref *AddressReference) Type() Type {
+func (ref *GlobalObjectReference) Type() Type {
 	return AddressType{
 		ValueType: ref.ValueType,
 	}
 }
 
 // Global constant reference
-type ConstantReference struct {
+type GlobalConstantReference struct {
 	Name string
 
 	// Internal
@@ -45,9 +45,9 @@ type ConstantReference struct {
 	Content      []byte
 }
 
-func (*ConstantReference) isReference() {}
+func (*GlobalConstantReference) isValue() {}
 
-func (ref *ConstantReference) Type() Type {
+func (ref *GlobalConstantReference) Type() Type {
 	return ref.ConstantType
 }
 
@@ -56,10 +56,10 @@ type LocalReference struct {
 	Name string
 
 	// Internal
-	UseDef *LocalDefinition
+	UseDef *Definition
 }
 
-func (*LocalReference) isReference() {}
+func (*LocalReference) isValue() {}
 
 func (ref *LocalReference) Type() Type {
 	return ref.UseDef.Type
@@ -68,32 +68,34 @@ func (ref *LocalReference) Type() Type {
 // Local immediate
 type Immediate struct {
 	ImmediateType Type
-	Reference     []byte
+	Bytes         []byte
 }
 
-func (*Immediate) isReference() {}
+func (*Immediate) isValue() {}
 
 func (imm *Immediate) Type() Type {
 	return imm.ImmediateType
 }
 
-type ElementIndex struct {
-	IsArrayIndex bool // false indicate field index
-
-	Field string
-	Index int
-}
-
+// TODO: Rethink this. maybe be better to decompose this into operations?
+//
 // (Similar to llvm's getelementptr, but operates on all data types) This
 // represents data chunk / address offset calculation that will be used for
 // accessing/modifying the referenced value.
-type Value struct {
-	Reference Reference
+type SubValue struct {
+	Reference Value
 
-	// Empty list indicate the full value is used.
-	SubElement []ElementIndex
+	// Index into either array or struct field.  Empty list indicate the full
+	// value is used.
+	SubElementIndices []int
 
 	// Only applicable when reference's type is address type.  Access/modify the
 	// dereference subelement value rather than the address itself.
 	IndirectAccess bool
+}
+
+func (*SubValue) isValue() {}
+
+func (imm *SubValue) Type() Type {
+	panic("TODO")
 }

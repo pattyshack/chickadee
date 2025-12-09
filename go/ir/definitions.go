@@ -55,20 +55,41 @@ type CompilationUnit struct {
 	VariableDefinitions []*ObjectDefinition
 }
 
-type Signatures struct {
-	FunctionDeclarations map[string]*FunctionType
+// NOTE: A local definition is both an instruction statement and a definition.
+// Grouping the operation with the definition simplifies constant propagation,
+// value re-materialization, etc.
+type Definition struct {
+	instruction
 
-	ConstantDefinitions map[string]*ObjectDefinition
-
-	VariableDeclarations map[string]Type
-}
-
-// Local variable definition
-type LocalDefinition struct {
+	// Side effect only operations may use empty string name to indicate the
+	// value is inaccessible.
 	Name string
-	Type Type
+	Type
+
+	Operation // nil iff IsFunctionParameter is true
 
 	// Internal
-	Instruction Instruction
-	DefUses     map[*LocalReference]struct{}
+
+	// Used for defining function parameters.
+	IsFunctionParameter bool
+
+	Chunks []*DefinitionChunk
+
+	DefUse map[*LocalReference]struct{}
+}
+
+// For internal use only.
+//
+// Each value is partition into chunks that could fit into 8-byte registers.
+// Each copy of a chunk is either completely on memory or completely in
+// register.
+type DefinitionChunk struct {
+	*Definition
+
+	// The offset is relative to the beginning of the definition's value.
+	Offset int
+
+	// Number of valid bytes in this chunk (e.g., size could be smaller than
+	// the register size)
+	Size int
 }

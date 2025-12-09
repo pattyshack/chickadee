@@ -15,7 +15,10 @@ type Block struct {
 
 	Label string
 
-	Instructions []Instruction
+	Operations []*Definition
+
+	// When nil, this implicitly jumps to the next block
+	ControlFlow ControlFlowInstruction
 
 	// internal
 
@@ -30,7 +33,7 @@ type Block struct {
 }
 
 type Phi struct {
-	Dest *LocalDefinition
+	Dest *Definition
 
 	// Value is usually a variable reference, but could be constant after
 	// optimization.

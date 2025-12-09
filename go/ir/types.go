@@ -128,7 +128,7 @@ type CallConventionKind string
 type FunctionType struct {
 	CallConventionKind
 	ParameterTypes []Type
-	ReturnType     Type // nil for no return value
+	ReturnType     Type // use empty struct for no return value
 
 	// TODO compute register constraints / stack layout
 	// NOTE: (internal use only) This is not part of the type signature.

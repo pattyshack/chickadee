@@ -1,13 +1,19 @@
 package ir
 
+type Operation interface {
+	isOperation()
+}
+
+type operation struct{}
+
+func (operation) isOperation() {}
+
 // Initialize value of ValueType with zeros.  When AllocatedOnStack is true,
 // the value is allocated on stack and the value's address is assigned to
 // destination.  When AllocatedOnStack is false, the zero value is assigned
 // to the destination.
 type InitializeOperation struct {
-	instruction
-
-	Dest *LocalDefinition
+	operation
 
 	AllocateOnStack bool
 	ValueType       Type
@@ -22,12 +28,10 @@ const (
 )
 
 type UnaryOperation struct {
-	instruction
+	operation
 
 	Kind UnaryOperationKind
-
-	Dest *LocalDefinition
-	Src  *Value
+	Src  Value
 }
 
 type BinaryOperationKind string
@@ -42,13 +46,12 @@ const (
 )
 
 type BinaryOperation struct {
-	instruction
+	Operation
 
 	Kind BinaryOperationKind
 
-	Dest *LocalDefinition
-	Src1 *Value
-	Src2 *Value
+	Src1 Value
+	Src2 Value
 }
 
 type FuncCallKind string
@@ -57,12 +60,11 @@ const (
 	Call = FuncCallKind("call")
 )
 
+// NOTE: function always return a value.  Use empty struct for void
 type FuncCall struct {
-	instruction
+	operation
 
 	Kind FuncCallKind
-
-	Dest *LocalDefinition // nil if the function doesn't return any value
-	Func *Value
-	Args []*Value
+	Func Value
+	Args []Value
 }

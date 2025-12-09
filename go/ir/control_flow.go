@@ -33,5 +33,5 @@ type Terminal struct {
 
 	Kind TerminalKind
 
-	RetValue *Value // nil for function without return value
+	RetValue *Value // return empty struct for void
 }
