@@ -4,4 +4,6 @@ type Config struct {
 	Name string
 
 	RegisterSet
+
+	InstructionSet
 }

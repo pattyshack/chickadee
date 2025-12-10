@@ -22,9 +22,23 @@ type InitializeOperation struct {
 type UnaryOperationKind string
 
 const (
-	Copy = UnaryOperationKind("copy")
+	Copy = UnaryOperationKind("copy") // XXX: rethink this
 
 	Neg = UnaryOperationKind("neg")
+	Not = UnaryOperationKind("not")
+
+	ToInt8  = UnaryOperationKind("toInt8")
+	ToInt16 = UnaryOperationKind("toInt16")
+	ToInt32 = UnaryOperationKind("toInt32")
+	ToInt64 = UnaryOperationKind("toInt64")
+
+	ToUint8  = UnaryOperationKind("toUint8")
+	ToUint16 = UnaryOperationKind("toUint16")
+	ToUint32 = UnaryOperationKind("toUint32")
+	ToUint64 = UnaryOperationKind("toUint64")
+
+	ToFloat32 = UnaryOperationKind("toFloat32")
+	ToFloat64 = UnaryOperationKind("toFloat64")
 )
 
 type UnaryOperation struct {
@@ -43,6 +57,18 @@ const (
 	SetElement = BinaryOperationKind("set element")
 
 	Add = BinaryOperationKind("add")
+	Mul = BinaryOperationKind("mul")
+
+	Sub = BinaryOperationKind("sub")
+	Div = BinaryOperationKind("div")
+	Rem = BinaryOperationKind("rem")
+
+	Shl = BinaryOperationKind("shl")
+	Shr = BinaryOperationKind("shr")
+
+	And = BinaryOperationKind("and")
+	Or  = BinaryOperationKind("or")
+	Xor = BinaryOperationKind("xor")
 )
 
 type BinaryOperation struct {
