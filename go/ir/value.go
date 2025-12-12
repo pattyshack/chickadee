@@ -1,6 +1,8 @@
 package ir
 
 type Value interface {
+	Operation // Copy/assignment operation
+
 	isValue()
 
 	Type() Type
@@ -8,6 +10,8 @@ type Value interface {
 
 // Function definition reference
 type GlobalFunctionReference struct {
+	operation
+
 	Name string
 
 	// Internal
@@ -22,6 +26,8 @@ func (ref *GlobalFunctionReference) Type() Type {
 
 // Global object reference
 type GlobalObjectReference struct {
+	operation
+
 	Name string
 
 	// Internal
@@ -38,6 +44,8 @@ func (ref *GlobalObjectReference) Type() Type {
 
 // Global constant reference
 type GlobalConstantReference struct {
+	operation
+
 	Name string
 
 	// Internal
@@ -53,6 +61,8 @@ func (ref *GlobalConstantReference) Type() Type {
 
 // Local variable reference
 type LocalReference struct {
+	operation
+
 	Name string
 
 	// Internal
@@ -67,6 +77,8 @@ func (ref *LocalReference) Type() Type {
 
 // Local immediate
 type Immediate struct {
+	operation
+
 	ImmediateType Type
 	Bytes         []byte
 }
@@ -77,6 +89,7 @@ func (imm *Immediate) Type() Type {
 	return imm.ImmediateType
 }
 
+/*
 // TODO: Rethink this. maybe be better to decompose this into operations?
 //
 // (Similar to llvm's getelementptr, but operates on all data types) This
@@ -99,3 +112,4 @@ func (*SubValue) isValue() {}
 func (imm *SubValue) Type() Type {
 	panic("TODO")
 }
+*/

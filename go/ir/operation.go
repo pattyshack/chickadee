@@ -22,8 +22,6 @@ type InitializeOperation struct {
 type UnaryOperationKind string
 
 const (
-	Copy = UnaryOperationKind("copy") // XXX: rethink this
-
 	Neg = UnaryOperationKind("neg")
 	Not = UnaryOperationKind("not")
 

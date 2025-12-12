@@ -18,8 +18,8 @@ type ConditionalJump struct {
 	Kind ConditionalJumpKind
 
 	Label string
-	Src1  *Value
-	Src2  *Value
+	Src1  Value
+	Src2  Value
 }
 
 type TerminalKind string
