@@ -55,23 +55,25 @@ type CompilationUnit struct {
 	VariableDefinitions []*ObjectDefinition
 }
 
-// NOTE: A local definition is both an instruction statement and a definition.
+// NOTE: A Definition acts as an instruction statement, a definition for local
+// value, or a pseudo definition for non-local values.
+//
 // Grouping the operation with the definition simplifies constant propagation,
 // value re-materialization, etc.
 type Definition struct {
 	instruction
 
-	// Side effect only operations may use empty string name to indicate the
-	// value is inaccessible.
+	// Side effect only operations and pseudo definitions may use empty string
+	// name to indicate the value is inaccessible.
 	Name string
 	Type
 
-	Operation // nil iff IsFunctionParameter is true
+	Operation // nil iff this is a function parameter pseudo definition
 
 	// Internal
 
-	// Used for defining function parameters.
-	IsFunctionParameter bool
+	// Used for defining function parameters and non-local reference values.
+	IsPseudoDefinition bool
 
 	Chunks []*DefinitionChunk
 

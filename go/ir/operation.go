@@ -48,12 +48,31 @@ type UnaryOperation struct {
 
 type BinaryOperationKind string
 
-const (
-	// Create a new value out of the first source, modified by the second source.
-	// The first definition is destroyed as part of the process (the same name
-	// could be reuse for a new definition).
-	SetElement = BinaryOperationKind("set element")
+/*
+TODO rethink get / set element
 
+// (Similar to llvm's getelementptr, but operates on all data types) This
+// represents data chunk / address offset calculation that will be used for
+// accessing/modifying the referenced value.
+type SubValue struct {
+	Reference Value
+
+	// Index into either array or struct field.  Empty list indicate the full
+	// value is used.
+	SubElementIndices []int
+
+	// Only applicable when reference's type is address type.  Access/modify
+	// the dereference subelement value rather than the address itself.
+	IndirectAccess bool
+}
+
+// Create a new value out of the first source, modified by the second source.
+// The first definition is destroyed as part of the process (the same name
+// could be reuse for a new definition).
+SetElement = BinaryOperationKind("set element")
+*/
+
+const (
 	Add = BinaryOperationKind("add")
 	Mul = BinaryOperationKind("mul")
 
@@ -70,7 +89,7 @@ const (
 )
 
 type BinaryOperation struct {
-	Operation
+	operation
 
 	Kind BinaryOperationKind
 
