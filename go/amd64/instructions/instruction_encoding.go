@@ -306,9 +306,10 @@ func newMI8(
 	opCode []byte,
 	opCodeExtension byte,
 	rm *architecture.Register,
-	immediate uint8,
+	immediate interface{}, // uint8
 ) modRMSpec {
-	return _newMI(operandSize, opCode, opCodeExtension, rm, []byte{immediate})
+	value := immediate.(uint8)
+	return _newMI(operandSize, opCode, opCodeExtension, rm, []byte{value})
 }
 
 // Register-direct addressing ModRM instruction of the form:

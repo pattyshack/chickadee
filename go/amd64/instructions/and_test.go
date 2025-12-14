@@ -8,6 +8,7 @@ import (
 	amd64 "github.com/pattyshack/chickadee/amd64/layout"
 	"github.com/pattyshack/chickadee/amd64/registers"
 	"github.com/pattyshack/chickadee/ir"
+	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
 )
 
@@ -217,6 +218,237 @@ func TestAndUint64Immediate(t *testing.T) {
 		t,
 		[]byte{0x48, 0x81, 0xe5, 0x12, 0xf0, 0xde, 0x7c},
 		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectAndIntImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(int16(0x0a0b))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Int16,
+		Operation: &ir.BinaryOperation{
+			Kind: ir.And,
+			Src1: imm,
+			Src2: src,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(binaryMIOperation)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Rbx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x66, 0x81, 0xe3, 0x0b, 0x0a},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectAndInt(t *testing.T) {
+	src1 := ir.NewLocalReference("src1")
+	src1Chunk := &ir.DefinitionChunk{}
+	src1Def := &ir.Definition{
+		Name:   "src1",
+		Chunks: []*ir.DefinitionChunk{src1Chunk},
+	}
+	src1Chunk.Definition = src1Def
+	src1.(*ir.LocalReference).UseDef = src1Def
+
+	src2 := ir.NewLocalReference("src2")
+	src2Chunk := &ir.DefinitionChunk{}
+	src2Def := &ir.Definition{
+		Name:   "src2",
+		Chunks: []*ir.DefinitionChunk{src2Chunk},
+	}
+	src2Chunk.Definition = src2Def
+	src2.(*ir.LocalReference).UseDef = src2Def
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Int8,
+		Operation: &ir.BinaryOperation{
+			Kind: ir.And,
+			Src1: src1,
+			Src2: src2,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(binaryRMOperation)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Equal(t, 2, len(constraints.RegisterSources))
+	src1Register := constraints.RegisterSources[0].RegisterConstraint
+	src2Register := constraints.RegisterSources[1].RegisterConstraint
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			src1Register: registers.Rax,
+			src2Register: registers.Rcx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x23, 0xc1}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectAndUintImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(uint8(0xff))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Uint8,
+		Operation: &ir.BinaryOperation{
+			Kind: ir.And,
+			Src1: imm,
+			Src2: src,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(binaryMIOperation)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Rax,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x80, 0xe0, 0xff}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectAndUint(t *testing.T) {
+	src1 := ir.NewLocalReference("src1")
+	src1Chunk := &ir.DefinitionChunk{}
+	src1Def := &ir.Definition{
+		Name:   "src1",
+		Chunks: []*ir.DefinitionChunk{src1Chunk},
+	}
+	src1Chunk.Definition = src1Def
+	src1.(*ir.LocalReference).UseDef = src1Def
+
+	src2 := ir.NewLocalReference("src2")
+	src2Chunk := &ir.DefinitionChunk{}
+	src2Def := &ir.Definition{
+		Name:   "src2",
+		Chunks: []*ir.DefinitionChunk{src2Chunk},
+	}
+	src2Chunk.Definition = src2Def
+	src2.(*ir.LocalReference).UseDef = src2Def
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Uint64,
+		Operation: &ir.BinaryOperation{
+			Kind: ir.And,
+			Src1: src1,
+			Src2: src2,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(binaryRMOperation)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Equal(t, 2, len(constraints.RegisterSources))
+	src1Register := constraints.RegisterSources[0].RegisterConstraint
+	src2Register := constraints.RegisterSources[1].RegisterConstraint
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			src1Register: registers.R15,
+			src2Register: registers.Rax,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x4c, 0x23, 0xf8}, segment.Content.Flatten())
 	expect.Equal(t, layout.Definitions{}, segment.Definitions)
 	expect.Equal(t, layout.Relocations{}, segment.Relocations)
 }
