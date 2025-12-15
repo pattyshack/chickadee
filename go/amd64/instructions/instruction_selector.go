@@ -4,10 +4,45 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/pattyshack/chickadee/amd64/registers"
 	"github.com/pattyshack/chickadee/ir"
 	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
 )
+
+type encodeMIFunc func(
+	*layout.SegmentBuilder,
+	ir.Type,
+	*architecture.Register,
+	interface{})
+
+// NOTE: This handles both MI and MI8 Op/En
+type binaryMIOperation struct {
+	*ir.Definition
+
+	immediate interface{}
+
+	architecture.InstructionConstraints
+
+	encodeMI encodeMIFunc
+}
+
+func (op binaryMIOperation) Instruction() ir.Instruction {
+	return op.Definition
+}
+
+func (op binaryMIOperation) Constraints() architecture.InstructionConstraints {
+	return op.InstructionConstraints
+}
+
+func (op binaryMIOperation) EmitTo(
+	builder *layout.SegmentBuilder,
+	selectedRegisters map[*architecture.RegisterConstraint]*architecture.Register,
+) {
+	constraint := op.RegisterSources[0].RegisterConstraint
+	register := selectedRegisters[constraint]
+	op.encodeMI(builder, op.Type, register, op.immediate)
+}
 
 type encodeRMFunc func(
 	*layout.SegmentBuilder,
@@ -15,11 +50,68 @@ type encodeRMFunc func(
 	*architecture.Register,
 	*architecture.Register)
 
-type encodeMIFunc func(
+type binaryRMOperation struct {
+	*ir.Definition
+
+	architecture.InstructionConstraints
+
+	encodeRM encodeRMFunc
+}
+
+func (op binaryRMOperation) Instruction() ir.Instruction {
+	return op.Definition
+}
+
+func (op binaryRMOperation) Constraints() architecture.InstructionConstraints {
+	return op.InstructionConstraints
+}
+
+func (op binaryRMOperation) EmitTo(
+	builder *layout.SegmentBuilder,
+	selectedRegisters map[*architecture.RegisterConstraint]*architecture.Register,
+) {
+	if len(op.RegisterSources) == 1 {
+		constraint := op.RegisterSources[0].RegisterConstraint
+		register := selectedRegisters[constraint]
+		op.encodeRM(builder, op.Type, register, register)
+	} else {
+		registers := make([]*architecture.Register, 2)
+		for idx, source := range op.RegisterSources {
+			registers[idx] = selectedRegisters[source.RegisterConstraint]
+		}
+		op.encodeRM(builder, op.Type, registers[0], registers[1])
+	}
+}
+
+type encodeMFunc func(
 	*layout.SegmentBuilder,
 	ir.Type,
-	*architecture.Register,
-	interface{})
+	*architecture.Register)
+
+// NOTE: This handles both M and MC Op/En
+type binaryMOperation struct {
+	*ir.Definition
+
+	architecture.InstructionConstraints
+
+	encodeM encodeMFunc
+}
+
+func (op binaryMOperation) Instruction() ir.Instruction {
+	return op.Definition
+}
+
+func (op binaryMOperation) Constraints() architecture.InstructionConstraints {
+	return op.InstructionConstraints
+}
+
+func (op binaryMOperation) EmitTo(
+	builder *layout.SegmentBuilder,
+	selectedRegisters map[*architecture.RegisterConstraint]*architecture.Register,
+) {
+	constraint := op.RegisterSources[0].RegisterConstraint
+	op.encodeM(builder, op.Type, selectedRegisters[constraint])
+}
 
 // Common binary operation of the form (<dest> = <op> <dest> <src>) with
 // optional immediate specialization (<dest> = <op> <dest> <immediate>)
@@ -195,62 +287,120 @@ func (selector commonBinaryOperationSelector) newBinaryRMOperation(
 	}
 }
 
-type binaryMIOperation struct {
-	*ir.Definition
-
-	immediate interface{}
-
-	architecture.InstructionConstraints
-
-	encodeMI encodeMIFunc
+type shiftSelector struct {
+	encodeMI8 encodeMIFunc
+	encodeMC  encodeMFunc
 }
 
-func (op binaryMIOperation) Instruction() ir.Instruction {
-	return op.Definition
+func (selector shiftSelector) Select(
+	def *ir.Definition,
+	hint architecture.SelectorHint,
+) architecture.MachineInstruction {
+	binaryOp := def.Operation.(*ir.BinaryOperation)
+
+	instruction := selector.maybeNewBinaryMI8Operation(binaryOp, def, hint)
+	if instruction != nil {
+		return instruction
+	}
+
+	return selector.newBinaryMCOperation(binaryOp, def, hint)
 }
 
-func (op binaryMIOperation) Constraints() architecture.InstructionConstraints {
-	return op.InstructionConstraints
+func (selector shiftSelector) maybeNewBinaryMI8Operation(
+	binaryOp *ir.BinaryOperation,
+	def *ir.Definition,
+	hint architecture.SelectorHint,
+) architecture.MachineInstruction {
+	immediate, ok := binaryOp.Src2.(*ir.Immediate)
+	if !ok {
+		return nil
+	}
+
+	src := binaryOp.Src1
+
+	register := &architecture.RegisterConstraint{
+		Clobbered:  true,
+		AnyGeneral: true,
+	}
+
+	return binaryMIOperation{
+		Definition: def,
+		immediate:  immediate.Value, // always an uint8
+		InstructionConstraints: architecture.InstructionConstraints{
+			RegisterSources: []architecture.RegisterMapping{
+				{
+					RegisterConstraint: register,
+					DefinitionChunk:    src.Def().Chunks[0],
+				},
+			},
+			RegisterDestinations: []architecture.RegisterMapping{
+				{
+					RegisterConstraint: register,
+					DefinitionChunk:    def.Chunks[0],
+				},
+			},
+		},
+		encodeMI: selector.encodeMI8,
+	}
 }
 
-func (op binaryMIOperation) EmitTo(
-	builder *layout.SegmentBuilder,
-	selectedRegisters map[*architecture.RegisterConstraint]*architecture.Register,
-) {
-	constraint := op.RegisterSources[0].RegisterConstraint
-	register := selectedRegisters[constraint]
-	op.encodeMI(builder, op.Type, register, op.immediate)
-}
-
-type binaryRMOperation struct {
-	*ir.Definition
-
-	architecture.InstructionConstraints
-
-	encodeRM encodeRMFunc
-}
-
-func (op binaryRMOperation) Instruction() ir.Instruction {
-	return op.Definition
-}
-
-func (op binaryRMOperation) Constraints() architecture.InstructionConstraints {
-	return op.InstructionConstraints
-}
-
-func (op binaryRMOperation) EmitTo(
-	builder *layout.SegmentBuilder,
-	selectedRegisters map[*architecture.RegisterConstraint]*architecture.Register,
-) {
-	if len(op.RegisterSources) == 1 {
-		constraint := op.RegisterSources[0].RegisterConstraint
-		register := selectedRegisters[constraint]
-		op.encodeRM(builder, op.Type, register, register)
-	} else {
-		registers := make([]*architecture.Register, 2)
-		for idx, source := range op.RegisterSources {
-			registers[idx] = selectedRegisters[source.RegisterConstraint]
+func (selector shiftSelector) newBinaryMCOperation(
+	binaryOp *ir.BinaryOperation,
+	def *ir.Definition,
+	hint architecture.SelectorHint,
+) architecture.MachineInstruction {
+	constraints := architecture.InstructionConstraints{}
+	src1Chunk := binaryOp.Src1.Def().Chunks[0]
+	src2Chunk := binaryOp.Src2.Def().Chunks[0]
+	if src1Chunk == src2Chunk {
+		register := &architecture.RegisterConstraint{
+			Clobbered: true,
+			Require:   registers.Rcx,
 		}
-		op.encodeRM(builder, op.Type, registers[0], registers[1])
+
+		constraints.RegisterSources = []architecture.RegisterMapping{
+			{
+				RegisterConstraint: register,
+				DefinitionChunk:    src1Chunk,
+			},
+		}
+		constraints.RegisterDestinations = []architecture.RegisterMapping{
+			{
+				RegisterConstraint: register,
+				DefinitionChunk:    def.Chunks[0],
+			},
+		}
+	} else {
+		dest := &architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+		}
+
+		count := &architecture.RegisterConstraint{
+			Require: registers.Rcx,
+		}
+
+		constraints.RegisterSources = []architecture.RegisterMapping{
+			{
+				RegisterConstraint: dest,
+				DefinitionChunk:    src1Chunk,
+			},
+			{
+				RegisterConstraint: count,
+				DefinitionChunk:    src2Chunk,
+			},
+		}
+		constraints.RegisterDestinations = []architecture.RegisterMapping{
+			{
+				RegisterConstraint: dest,
+				DefinitionChunk:    def.Chunks[0],
+			},
+		}
+	}
+
+	return binaryMOperation{
+		Definition:             def,
+		InstructionConstraints: constraints,
+		encodeM:                selector.encodeMC,
 	}
 }

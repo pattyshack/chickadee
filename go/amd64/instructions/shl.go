@@ -48,7 +48,7 @@ func shlIntImmediate(
 	builder *layout.SegmentBuilder,
 	simpleType ir.Type,
 	dest *architecture.Register,
-	immediate uint8,
+	immediate interface{}, // uint8
 ) {
 	operandSize := 0
 	switch size := simpleType.(type) {

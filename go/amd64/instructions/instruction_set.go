@@ -12,6 +12,7 @@ var InstructionSet = architecture.InstructionSet{
 		encodeMI:    addIntImmediate,
 		encodeRM:    add,
 	},
+	// TODO 3-address form add via lea
 	AddInt: commonBinaryOperationSelector{
 		isFloat:     false,
 		isSymmetric: true,
@@ -30,6 +31,7 @@ var InstructionSet = architecture.InstructionSet{
 		isSymmetric: true,
 		encodeRM:    mul,
 	},
+	// TODO mul int/uint need to handle RMI encoding
 	MulInt: commonBinaryOperationSelector{
 		isFloat:     false,
 		isSymmetric: true,
@@ -57,6 +59,24 @@ var InstructionSet = architecture.InstructionSet{
 		isFloat:     true,
 		isSymmetric: false,
 		encodeRM:    sub,
+	},
+
+	ShlUint: shiftSelector{
+		encodeMI8: shlIntImmediate,
+		encodeMC:  shl,
+	},
+	ShlInt: shiftSelector{
+		encodeMI8: shlIntImmediate,
+		encodeMC:  shl,
+	},
+
+	ShrUint: shiftSelector{
+		encodeMI8: shrIntImmediate,
+		encodeMC:  shr,
+	},
+	ShrInt: shiftSelector{
+		encodeMI8: shrIntImmediate,
+		encodeMC:  shr,
 	},
 
 	AndUint: commonBinaryOperationSelector{
