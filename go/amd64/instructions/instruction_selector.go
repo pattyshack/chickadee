@@ -113,6 +113,28 @@ func (op binaryMOperation) EmitTo(
 	op.encodeM(builder, op.Type, selectedRegisters[constraint])
 }
 
+type divRemOperation struct {
+	*ir.Definition
+
+	architecture.InstructionConstraints
+}
+
+func (op divRemOperation) Instruction() ir.Instruction {
+	return op.Definition
+}
+
+func (op divRemOperation) Constraints() architecture.InstructionConstraints {
+	return op.InstructionConstraints
+}
+
+func (op divRemOperation) EmitTo(
+	builder *layout.SegmentBuilder,
+	selectedRegisters map[*architecture.RegisterConstraint]*architecture.Register,
+) {
+	constraint := op.RegisterSources[len(op.RegisterSources)-1].RegisterConstraint
+	divRemInt(builder, op.Type, selectedRegisters[constraint])
+}
+
 // Common binary operation of the form (<dest> = <op> <dest> <src>) with
 // optional immediate specialization (<dest> = <op> <dest> <immediate>)
 type commonBinaryOperationSelector struct {
@@ -402,5 +424,67 @@ func (selector shiftSelector) newBinaryMCOperation(
 		Definition:             def,
 		InstructionConstraints: constraints,
 		encodeM:                selector.encodeMC,
+	}
+}
+
+type divRemSelector struct {
+	isRem bool
+}
+
+func (selector divRemSelector) Select(
+	def *ir.Definition,
+	hint architecture.SelectorHint,
+) architecture.MachineInstruction {
+	binaryOp := def.Operation.(*ir.BinaryOperation)
+
+	rax := &architecture.RegisterConstraint{
+		Clobbered: true,
+		Require:   registers.Rax,
+	}
+	rdx := &architecture.RegisterConstraint{
+		Clobbered: true,
+		Require:   registers.Rdx,
+	}
+
+	dest := rax
+	if selector.isRem {
+		dest = rdx
+	}
+
+	src1Chunk := binaryOp.Src1.Def().Chunks[0]
+	constraints := architecture.InstructionConstraints{
+		RegisterSources: []architecture.RegisterMapping{
+			{ // scratch space for dividend upper bytes
+				RegisterConstraint: rdx,
+				DefinitionChunk:    nil,
+			},
+			{
+				RegisterConstraint: rax,
+				DefinitionChunk:    src1Chunk,
+			},
+		},
+		RegisterDestinations: []architecture.RegisterMapping{
+			{
+				RegisterConstraint: dest,
+				DefinitionChunk:    def.Chunks[0],
+			},
+		},
+	}
+
+	src2Chunk := binaryOp.Src2.Def().Chunks[0]
+	if src1Chunk != src2Chunk {
+		constraints.RegisterSources = append(
+			constraints.RegisterSources,
+			architecture.RegisterMapping{
+				RegisterConstraint: &architecture.RegisterConstraint{
+					AnyGeneral: true,
+				},
+				DefinitionChunk: src2Chunk,
+			})
+	}
+
+	return divRemOperation{
+		Definition:             def,
+		InstructionConstraints: constraints,
 	}
 }

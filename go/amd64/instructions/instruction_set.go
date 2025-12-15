@@ -43,6 +43,25 @@ var InstructionSet = architecture.InstructionSet{
 		encodeRM:    mul,
 	},
 
+	DivUint: divRemSelector{
+		isRem: false,
+	},
+	DivInt: divRemSelector{
+		isRem: false,
+	},
+	DivFloat: commonBinaryOperationSelector{
+		isFloat:     true,
+		isSymmetric: true,
+		encodeRM:    divFloat,
+	},
+
+	RemUint: divRemSelector{
+		isRem: true,
+	},
+	RemInt: divRemSelector{
+		isRem: true,
+	},
+
 	SubUint: commonBinaryOperationSelector{
 		isFloat:     false,
 		isSymmetric: false,
