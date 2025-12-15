@@ -148,10 +148,9 @@ type commonBinaryOperationSelector struct {
 
 func (selector commonBinaryOperationSelector) Select(
 	def *ir.Definition,
+	binaryOp *ir.BinaryOperation,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
-	binaryOp := def.Operation.(*ir.BinaryOperation)
-
 	instruction := selector.maybeNewBinaryMIOperation(binaryOp, def, hint)
 	if instruction != nil {
 		return instruction
@@ -316,10 +315,9 @@ type shiftSelector struct {
 
 func (selector shiftSelector) Select(
 	def *ir.Definition,
+	binaryOp *ir.BinaryOperation,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
-	binaryOp := def.Operation.(*ir.BinaryOperation)
-
 	instruction := selector.maybeNewBinaryMI8Operation(binaryOp, def, hint)
 	if instruction != nil {
 		return instruction
@@ -433,10 +431,9 @@ type divRemSelector struct {
 
 func (selector divRemSelector) Select(
 	def *ir.Definition,
+	binaryOp *ir.BinaryOperation,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
-	binaryOp := def.Operation.(*ir.BinaryOperation)
-
 	rax := &architecture.RegisterConstraint{
 		Clobbered: true,
 		Require:   registers.Rax,
