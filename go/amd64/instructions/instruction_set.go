@@ -5,6 +5,22 @@ import (
 )
 
 var InstructionSet = architecture.InstructionSet{
+	NotUint: unaryMSelector{
+		encodeM: not,
+	},
+	NotInt: unaryMSelector{
+		encodeM: not,
+	},
+
+	NegInt: unaryMSelector{
+		encodeM: negSignedInt,
+	},
+	NegFloat: negFloatSelector{
+		f32: unaryMSelector{
+			encodeM: negFloat32,
+		},
+	},
+
 	UintToUint: conversionSelector{
 		srcIsFloat:       false,
 		destIsFloat:      false,

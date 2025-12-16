@@ -208,3 +208,89 @@ func (selector uintToFloatSelector) Select(
 		},
 	}
 }
+
+type unaryMSelector struct {
+	encodeM encodeMFunc
+}
+
+func (selector unaryMSelector) Select(
+	def *ir.Definition,
+	unaryOp *ir.UnaryOperation,
+	hint architecture.SelectorHint,
+) architecture.MachineInstruction {
+	register := &architecture.RegisterConstraint{
+		Clobbered:  true,
+		AnyGeneral: true,
+		AnyFloat:   false,
+	}
+
+	destChunk := def.Chunks[0]
+	srcChunk := unaryOp.Src.Def().Chunks[0]
+	return mOperation{
+		Definition: def,
+		InstructionConstraints: architecture.InstructionConstraints{
+			RegisterSources: []architecture.RegisterMapping{
+				{
+					RegisterConstraint: register,
+					DefinitionChunk:    srcChunk,
+				},
+			},
+			RegisterDestinations: []architecture.RegisterMapping{
+				{
+					RegisterConstraint: register,
+					DefinitionChunk:    destChunk,
+				},
+			},
+		},
+		encodeM: selector.encodeM,
+	}
+}
+
+type negFloatSelector struct {
+	f32 unaryMSelector
+}
+
+func (selector negFloatSelector) Select(
+	def *ir.Definition,
+	unaryOp *ir.UnaryOperation,
+	hint architecture.SelectorHint,
+) architecture.MachineInstruction {
+	if def.Type.Size() == 4 {
+		return selector.f32.Select(def, unaryOp, hint)
+	}
+
+	dest := &architecture.RegisterConstraint{
+		Clobbered:  true,
+		AnyGeneral: true,
+		AnyFloat:   false,
+	}
+
+	destChunk := def.Chunks[0]
+	srcChunk := unaryOp.Src.Def().Chunks[0]
+	return binaryRMOperation{
+		Definition: def,
+		InstructionConstraints: architecture.InstructionConstraints{
+			RegisterSources: []architecture.RegisterMapping{
+				{
+					RegisterConstraint: dest,
+					DefinitionChunk:    nil, // scratch
+				},
+				{
+					RegisterConstraint: &architecture.RegisterConstraint{
+						Clobbered:  false,
+						AnyGeneral: true,
+						AnyFloat:   false,
+					},
+					DefinitionChunk: srcChunk,
+				},
+			},
+			RegisterDestinations: []architecture.RegisterMapping{
+				{
+					RegisterConstraint: dest,
+					DefinitionChunk:    destChunk,
+				},
+			},
+		},
+		encodeRM: negFloat64,
+	}
+}

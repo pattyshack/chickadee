@@ -57,6 +57,7 @@ func negSignedInt(
 // directly into the instructions.
 func negFloat32(
 	builder *layout.SegmentBuilder,
+	float32Type ir.Type,
 	dest *architecture.Register, // general, not float, register
 ) {
 	xorIntImmediate(builder, ir.Uint32, dest, float32SignMask)
@@ -86,6 +87,7 @@ func negFloat32(
 // directly into the instructions.
 func negFloat64(
 	builder *layout.SegmentBuilder,
+	float64Type ir.Type,
 	dest *architecture.Register, // general, not float, register
 	src *architecture.Register, // general, not float, register
 ) {

@@ -6,7 +6,7 @@ import (
 	"github.com/pattyshack/chickadee/platform/layout"
 )
 
-// <int dest> = !<int dest>
+// <uint/int dest> = !<uint/int dest>
 //
 // https://www.felixcloutier.com/x86/not
 //

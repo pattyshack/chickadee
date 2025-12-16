@@ -281,7 +281,7 @@ func TestSelectShrInt(t *testing.T) {
 		dest,
 		architecture.SelectorHint{})
 
-	_, ok := instruction.(binaryMOperation)
+	_, ok := instruction.(mOperation)
 	expect.True(t, ok)
 
 	constraints := instruction.Constraints()
@@ -395,7 +395,7 @@ func TestSelectShrUint(t *testing.T) {
 		dest,
 		architecture.SelectorHint{})
 
-	_, ok := instruction.(binaryMOperation)
+	_, ok := instruction.(mOperation)
 	expect.True(t, ok)
 
 	constraints := instruction.Constraints()

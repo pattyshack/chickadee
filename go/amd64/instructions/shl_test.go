@@ -308,7 +308,7 @@ func TestSelectShlIntDifferentSources(t *testing.T) {
 		dest,
 		architecture.SelectorHint{})
 
-	_, ok := instruction.(binaryMOperation)
+	_, ok := instruction.(mOperation)
 	expect.True(t, ok)
 
 	// Validate constraints
@@ -407,7 +407,7 @@ func TestSelectShlIntSameSource(t *testing.T) {
 		dest,
 		architecture.SelectorHint{})
 
-	_, ok := instruction.(binaryMOperation)
+	_, ok := instruction.(mOperation)
 	expect.True(t, ok)
 
 	// Validate constraints
@@ -575,7 +575,7 @@ func TestSelectShlUint(t *testing.T) {
 		dest,
 		architecture.SelectorHint{})
 
-	_, ok := instruction.(binaryMOperation)
+	_, ok := instruction.(mOperation)
 	expect.True(t, ok)
 
 	// Validate constraints

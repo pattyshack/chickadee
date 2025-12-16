@@ -89,7 +89,7 @@ type encodeMFunc func(
 	*architecture.Register)
 
 // NOTE: This handles both M and MC Op/En
-type binaryMOperation struct {
+type mOperation struct {
 	*ir.Definition
 
 	architecture.InstructionConstraints
@@ -97,15 +97,15 @@ type binaryMOperation struct {
 	encodeM encodeMFunc
 }
 
-func (op binaryMOperation) Instruction() ir.Instruction {
+func (op mOperation) Instruction() ir.Instruction {
 	return op.Definition
 }
 
-func (op binaryMOperation) Constraints() architecture.InstructionConstraints {
+func (op mOperation) Constraints() architecture.InstructionConstraints {
 	return op.InstructionConstraints
 }
 
-func (op binaryMOperation) EmitTo(
+func (op mOperation) EmitTo(
 	builder *layout.SegmentBuilder,
 	selectedRegisters map[*architecture.RegisterConstraint]*architecture.Register,
 ) {
@@ -418,7 +418,7 @@ func (selector shiftSelector) newBinaryMCOperation(
 		}
 	}
 
-	return binaryMOperation{
+	return mOperation{
 		Definition:             def,
 		InstructionConstraints: constraints,
 		encodeM:                selector.encodeMC,
