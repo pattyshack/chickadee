@@ -8,6 +8,7 @@ import (
 	amd64 "github.com/pattyshack/chickadee/amd64/layout"
 	"github.com/pattyshack/chickadee/amd64/registers"
 	"github.com/pattyshack/chickadee/ir"
+	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
 )
 
@@ -779,6 +780,426 @@ func TestUint64ToFloat64(t *testing.T) {
 
 			// 43: cvtsi2sd xmm4, rbx
 			0xf2, 0x48, 0x0f, 0x2a, 0xe3,
+
+			// 48: end basic block
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectUintToUint(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Uint8,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Uint32,
+		Operation: &ir.UnaryOperation{
+			Kind: ir.ToUint32,
+			Src:  src,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{
+			NumFreeGeneralRegisters: 1,
+		})
+
+	_, ok := instruction.(conversionOperation)
+	expect.True(t, ok)
+
+	// Validate constraints
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+
+	expect.Equal(
+		t,
+		srcChunk,
+		constraints.RegisterSources[0].DefinitionChunk)
+
+	expect.Equal(t, 1, len(constraints.RegisterDestinations))
+	expect.Equal(
+		t,
+		destChunk,
+		constraints.RegisterDestinations[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.NotNil(t, srcRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		srcRegister)
+
+	destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+	expect.NotNil(t, destRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		destRegister)
+	expect.True(t, srcRegister != destRegister)
+
+	// Validate encoding
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister:  registers.Rax,
+			destRegister: registers.Rsi,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x0f, 0xb6, 0xf0}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectUintToInt(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Uint16,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Int32,
+		Operation: &ir.UnaryOperation{
+			Kind: ir.ToInt32,
+			Src:  src,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{
+			NumFreeGeneralRegisters: 1,
+		})
+
+	_, ok := instruction.(conversionOperation)
+	expect.True(t, ok)
+
+	// Validate constraints
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+
+	expect.Equal(
+		t,
+		srcChunk,
+		constraints.RegisterSources[0].DefinitionChunk)
+
+	expect.Equal(t, 1, len(constraints.RegisterDestinations))
+	expect.Equal(
+		t,
+		destChunk,
+		constraints.RegisterDestinations[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.NotNil(t, srcRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		srcRegister)
+
+	destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+	expect.NotNil(t, destRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		destRegister)
+	expect.True(t, srcRegister != destRegister)
+
+	// Validate encoding
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister:  registers.Rdi,
+			destRegister: registers.Rdx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(t, []byte{0x0f, 0xb7, 0xd7}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectSmallUintToFloat(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Uint32,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Float32,
+		Operation: &ir.UnaryOperation{
+			Kind: ir.ToFloat32,
+			Src:  src,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conversionOperation)
+	expect.True(t, ok)
+
+	// Validate constraints
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+
+	expect.Equal(
+		t,
+		srcChunk,
+		constraints.RegisterSources[0].DefinitionChunk)
+
+	expect.Equal(t, 1, len(constraints.RegisterDestinations))
+	expect.Equal(
+		t,
+		destChunk,
+		constraints.RegisterDestinations[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.NotNil(t, srcRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		srcRegister)
+
+	destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+	expect.NotNil(t, destRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: false,
+			AnyFloat:   true,
+			Require:    nil,
+		},
+		destRegister)
+	expect.True(t, srcRegister != destRegister)
+
+	// Validate encoding
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister:  registers.Rcx,
+			destRegister: registers.Xmm12,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x8b, 0xc9, // mov(zx)
+			0xf3, 0x4c, 0x0f, 0x2a, 0xe1, // cvtsi2ss
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectUint64ToFloat(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Uint64,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Float32,
+		Operation: &ir.UnaryOperation{
+			Kind: ir.ToFloat32,
+			Src:  src,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(uint64ToFloatOperation)
+	expect.True(t, ok)
+
+	// Validate constraints
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(t, 2, len(constraints.RegisterSources))
+
+	expect.Equal(
+		t,
+		srcChunk,
+		constraints.RegisterSources[0].DefinitionChunk)
+	expect.Nil(t, constraints.RegisterSources[1].DefinitionChunk)
+
+	expect.Equal(t, 1, len(constraints.RegisterDestinations))
+	expect.Equal(
+		t,
+		destChunk,
+		constraints.RegisterDestinations[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.NotNil(t, srcRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		srcRegister)
+
+	scratchRegister := constraints.RegisterSources[1].RegisterConstraint
+	expect.NotNil(t, srcRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		srcRegister)
+
+	destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+	expect.NotNil(t, destRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: false,
+			AnyFloat:   true,
+			Require:    nil,
+		},
+		destRegister)
+	expect.True(t, srcRegister != scratchRegister)
+	expect.True(t, srcRegister != destRegister)
+	expect.True(t, scratchRegister != destRegister)
+
+	// Validate encoding
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister:     registers.Rcx,
+			scratchRegister: registers.Rdx,
+			destRegister:    registers.Xmm7,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			// comparison basic block
+
+			// 0: cmp rcx, 0
+			0x48, 0x81, 0xf9, 0x00, 0x00, 0x00, 0x00,
+			// 7: jge <nonNegative offset> (= 43 - 13 = 30 = 0x1e)
+			0x0f, 0x8d, 0x1e, 0x00, 0x00, 0x00,
+
+			// negative branch basic block
+
+			// 13: mov rdx, rcx
+			0x48, 0x8b, 0xd1,
+			// 16: shr rdx, 1
+			0x48, 0xc1, 0xea, 0x01,
+			// 20: and ecx, 1
+			0x81, 0xe1, 0x01, 0x00, 0x00, 0x00,
+			// 26: or rcx, rdx
+			0x48, 0x0b, 0xca,
+			// 29: cvtsi2ss xmm7, rcx
+			0xf3, 0x48, 0x0f, 0x2a, 0xf9,
+			// 34: addss xmm7, xmm7
+			0xf3, 0x0f, 0x58, 0xff,
+			// 38: jmp <end offset> (= 48 - 43 = 5)
+			0xe9, 0x05, 0x00, 0x00, 0x00,
+
+			// non-negative branch basic block
+
+			// 43: cvtsi2ss xmm7, rcx
+			0xf3, 0x48, 0x0f, 0x2a, 0xf9,
 
 			// 48: end basic block
 		},

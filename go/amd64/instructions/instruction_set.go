@@ -5,6 +5,56 @@ import (
 )
 
 var InstructionSet = architecture.InstructionSet{
+	UintToUint: conversionSelector{
+		srcIsFloat:       false,
+		destIsFloat:      false,
+		encodeConversion: convertIntToInt,
+	},
+	IntToUint: conversionSelector{
+		srcIsFloat:       false,
+		destIsFloat:      false,
+		encodeConversion: convertIntToInt,
+	},
+	FloatToUint: conversionSelector{
+		srcIsFloat:       true,
+		destIsFloat:      false,
+		encodeConversion: convertFloatToInt,
+	},
+
+	UintToInt: conversionSelector{
+		srcIsFloat:       false,
+		destIsFloat:      false,
+		encodeConversion: convertIntToInt,
+	},
+	IntToInt: conversionSelector{
+		srcIsFloat:       false,
+		destIsFloat:      false,
+		encodeConversion: convertIntToInt,
+	},
+	FloatToInt: conversionSelector{
+		srcIsFloat:       true,
+		destIsFloat:      false,
+		encodeConversion: convertFloatToInt,
+	},
+
+	UintToFloat: uintToFloatSelector{
+		smallUint: conversionSelector{
+			srcIsFloat:       false,
+			destIsFloat:      true,
+			encodeConversion: convertSmallUintToFloat,
+		},
+	},
+	IntToFloat: conversionSelector{
+		srcIsFloat:       false,
+		destIsFloat:      true,
+		encodeConversion: convertSignedIntToFloat,
+	},
+	FloatToFloat: conversionSelector{
+		srcIsFloat:       true,
+		destIsFloat:      true,
+		encodeConversion: convertFloatToFloat,
+	},
+
 	// TODO 3-address form add via lea
 	AddUint: commonBinaryOperationSelector{
 		isFloat:     false,
