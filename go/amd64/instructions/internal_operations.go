@@ -39,13 +39,12 @@ func computeSymbolAddress(
 	// NOTE: We need to use indirectDisp0ModRMMode (00) and set r/m to rbp in
 	// order to access [RIP + disp32] computation.  We'll encode the second half
 	// of the instruction (displacement) separately.
-	spec := newRMI(
+	spec := newRM(
 		false,
 		8, // address size
 		[]byte{0x8D},
 		dest,
-		registers.Rbp,
-		nil)
+		registers.Rbp)
 	spec.mode = indirectDisp0ModRMMode
 	spec.encode(builder)
 
@@ -107,7 +106,7 @@ func computeStackAddress(
 		panic(err)
 	}
 
-	spec := newRMI(
+	spec := _newRMI(
 		false, // isFloat
 		8,     // address size
 		[]byte{0x8D},

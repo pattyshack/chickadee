@@ -1,6 +1,8 @@
 package instructions
 
 import (
+	"encoding/binary"
+	"math"
 	"testing"
 
 	"github.com/pattyshack/gt/testing/expect"
@@ -125,7 +127,7 @@ func TestMulFloat64(t *testing.T) {
 func TestMulInt8Immediate(t *testing.T) {
 	// mul r15d, ebx, 0x12 (NOTE: 32-bit imm8 variant)
 	builder := layout.NewSegmentBuilder()
-	mulIntImmediate(builder, ir.Int8, registers.R15, registers.Rbx, []byte{0x12})
+	mulIntImmediate(builder, ir.Int8, registers.R15, registers.Rbx, int8(0x12))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x44, 0x6b, 0xfb, 0x12}, segment.Content.Flatten())
@@ -141,7 +143,7 @@ func TestMulInt16Immediate(t *testing.T) {
 		ir.Int16,
 		registers.R15,
 		registers.Rbx,
-		[]byte{0x34, 0x12})
+		int16(0x1234))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -160,7 +162,7 @@ func TestMulInt32Immediate(t *testing.T) {
 		ir.Int32,
 		registers.R15,
 		registers.Rbx,
-		[]byte{0x78, 0x56, 0x34, 0x12})
+		int32(0x12345678))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -179,7 +181,7 @@ func TestMulInt64Immediate(t *testing.T) {
 		ir.Int64,
 		registers.R15,
 		registers.Rbx,
-		[]byte{0x9a, 0x78, 0x56, 0x34})
+		int64(0x3456789a))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -193,7 +195,7 @@ func TestMulInt64Immediate(t *testing.T) {
 func TestMulUint8Immediate(t *testing.T) {
 	// mul edx, r10d, 0x12 (NOTE: 32-bit imm8 variant)
 	builder := layout.NewSegmentBuilder()
-	mulIntImmediate(builder, ir.Uint8, registers.Rdx, registers.R10, []byte{0x12})
+	mulIntImmediate(builder, ir.Uint8, registers.Rdx, registers.R10, uint8(0x12))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0x41, 0x6b, 0xd2, 0x12}, segment.Content.Flatten())
@@ -209,7 +211,7 @@ func TestMulUint16Immediate(t *testing.T) {
 		ir.Uint16,
 		registers.Rdx,
 		registers.R10,
-		[]byte{0x34, 0x12})
+		uint16(0x1234))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -228,7 +230,7 @@ func TestMulUint32Immediate(t *testing.T) {
 		ir.Uint32,
 		registers.Rdx,
 		registers.R10,
-		[]byte{0x78, 0x56, 0x34, 0x12})
+		uint32(0x12345678))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -247,7 +249,7 @@ func TestMulUint64Immediate(t *testing.T) {
 		ir.Uint64,
 		registers.Rdx,
 		registers.R10,
-		[]byte{0x9a, 0x78, 0x56, 0x34})
+		uint64(0x3456789a))
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(
@@ -428,6 +430,573 @@ func TestSelectMulFloat(t *testing.T) {
 	segment, err := builder.Finalize(amd64.ArchitectureLayout)
 	expect.Nil(t, err)
 	expect.Equal(t, []byte{0xf3, 0x0f, 0x59, 0xc2}, segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+// Also verify symmetry
+func TestSelectMulIntImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	for _, immValue := range []int64{
+		0x12345678,
+		math.MaxInt32,
+		math.MinInt32,
+	} {
+		imm := ir.NewBasicImmediate(immValue)
+		immChunk := &ir.DefinitionChunk{}
+		immDef := &ir.Definition{
+			Name:   "imm",
+			Chunks: []*ir.DefinitionChunk{immChunk},
+		}
+		immChunk.Definition = immDef
+		imm.(*ir.Immediate).PseudoDefinition = immDef
+
+		immBytes := make([]byte, 8)
+		_, err := binary.Encode(immBytes, binary.LittleEndian, immValue)
+		expect.Nil(t, err)
+
+		for iter := 0; iter < 2; iter++ {
+			destChunk := &ir.DefinitionChunk{}
+			dest := &ir.Definition{
+				Type:   ir.Int64,
+				Chunks: []*ir.DefinitionChunk{destChunk},
+			}
+			destChunk.Definition = dest
+
+			if iter == 0 { // right immediate
+				dest.Operation = &ir.BinaryOperation{
+					Kind: ir.Mul,
+					Src1: src,
+					Src2: imm,
+				}
+			} else { // left immediate
+				dest.Operation = &ir.BinaryOperation{
+					Kind: ir.Mul,
+					Src1: imm,
+					Src2: src,
+				}
+			}
+
+			instruction := architecture.SelectInstruction(
+				InstructionSet,
+				dest,
+				architecture.SelectorHint{})
+
+			_, ok := instruction.(imulRMIOperation)
+			expect.True(t, ok)
+
+			// Validate constraints
+
+			constraints := instruction.Constraints()
+			expect.Nil(t, constraints.StackSources)
+			expect.Nil(t, constraints.StackDestination)
+
+			expect.Equal(t, 1, len(constraints.RegisterSources))
+			expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+			expect.Equal(t, 1, len(constraints.RegisterDestinations))
+			expect.Equal(
+				t,
+				destChunk,
+				constraints.RegisterDestinations[0].DefinitionChunk)
+
+			srcRegister := constraints.RegisterSources[0].RegisterConstraint
+			expect.NotNil(t, srcRegister)
+			expect.Equal(
+				t,
+				&architecture.RegisterConstraint{
+					Clobbered:  true,
+					AnyGeneral: true,
+					AnyFloat:   false,
+					Require:    nil,
+				},
+				srcRegister)
+
+			destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+			expect.True(t, srcRegister == destRegister)
+
+			// Validate encoding
+
+			builder := layout.NewSegmentBuilder()
+			instruction.EmitTo(
+				builder,
+				map[*architecture.RegisterConstraint]*architecture.Register{
+					srcRegister: registers.Rcx,
+				})
+			segment, err := builder.Finalize(amd64.ArchitectureLayout)
+			expect.Nil(t, err)
+			expect.Equal(
+				t,
+				append([]byte{0x48, 0x69, 0xc9}, immBytes[:4]...),
+				segment.Content.Flatten())
+			expect.Equal(t, layout.Definitions{}, segment.Definitions)
+			expect.Equal(t, layout.Relocations{}, segment.Relocations)
+		}
+	}
+}
+
+// Also verify symmetry
+func TestSelectMulUintImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	for _, immValue := range []uint64{
+		0x12345678,
+		math.MaxInt32,
+		0,
+	} {
+		imm := ir.NewBasicImmediate(immValue)
+		immChunk := &ir.DefinitionChunk{}
+		immDef := &ir.Definition{
+			Name:   "imm",
+			Chunks: []*ir.DefinitionChunk{immChunk},
+		}
+		immChunk.Definition = immDef
+		imm.(*ir.Immediate).PseudoDefinition = immDef
+
+		immBytes := make([]byte, 8)
+		_, err := binary.Encode(immBytes, binary.LittleEndian, immValue)
+		expect.Nil(t, err)
+
+		for iter := 0; iter < 2; iter++ {
+			destChunk := &ir.DefinitionChunk{}
+			dest := &ir.Definition{
+				Type:   ir.Uint64,
+				Chunks: []*ir.DefinitionChunk{destChunk},
+			}
+			destChunk.Definition = dest
+
+			if iter == 0 { // right immediate
+				dest.Operation = &ir.BinaryOperation{
+					Kind: ir.Mul,
+					Src1: src,
+					Src2: imm,
+				}
+			} else { // left immediate
+				dest.Operation = &ir.BinaryOperation{
+					Kind: ir.Mul,
+					Src1: imm,
+					Src2: src,
+				}
+			}
+
+			instruction := architecture.SelectInstruction(
+				InstructionSet,
+				dest,
+				architecture.SelectorHint{})
+
+			_, ok := instruction.(imulRMIOperation)
+			expect.True(t, ok)
+
+			// Validate constraints
+
+			constraints := instruction.Constraints()
+			expect.Nil(t, constraints.StackSources)
+			expect.Nil(t, constraints.StackDestination)
+
+			expect.Equal(t, 1, len(constraints.RegisterSources))
+			expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+			expect.Equal(t, 1, len(constraints.RegisterDestinations))
+			expect.Equal(
+				t,
+				destChunk,
+				constraints.RegisterDestinations[0].DefinitionChunk)
+
+			srcRegister := constraints.RegisterSources[0].RegisterConstraint
+			expect.NotNil(t, srcRegister)
+			expect.Equal(
+				t,
+				&architecture.RegisterConstraint{
+					Clobbered:  true,
+					AnyGeneral: true,
+					AnyFloat:   false,
+					Require:    nil,
+				},
+				srcRegister)
+
+			destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+			expect.True(t, srcRegister == destRegister)
+
+			// Validate encoding
+
+			builder := layout.NewSegmentBuilder()
+			instruction.EmitTo(
+				builder,
+				map[*architecture.RegisterConstraint]*architecture.Register{
+					srcRegister: registers.Rcx,
+				})
+			segment, err := builder.Finalize(amd64.ArchitectureLayout)
+			expect.Nil(t, err)
+			expect.Equal(
+				t,
+				append([]byte{0x48, 0x69, 0xc9}, immBytes[:4]...),
+				segment.Content.Flatten())
+			expect.Equal(t, layout.Definitions{}, segment.Definitions)
+			expect.Equal(t, layout.Relocations{}, segment.Relocations)
+		}
+	}
+}
+
+// Fallback to RM encoding when immediate don't fit
+func TestSelectMulIntOversizedImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	for _, immValue := range []int64{
+		math.MaxInt32 + 1,
+		math.MinInt32 - 1,
+	} {
+		imm := ir.NewBasicImmediate(immValue)
+		immChunk := &ir.DefinitionChunk{}
+		immDef := &ir.Definition{
+			Name:   "imm",
+			Chunks: []*ir.DefinitionChunk{immChunk},
+		}
+		immChunk.Definition = immDef
+		imm.(*ir.Immediate).PseudoDefinition = immDef
+
+		destChunk := &ir.DefinitionChunk{}
+		dest := &ir.Definition{
+			Type: ir.Int64,
+			Operation: &ir.BinaryOperation{
+				Kind: ir.Mul,
+				Src1: src,
+				Src2: imm,
+			},
+			Chunks: []*ir.DefinitionChunk{destChunk},
+		}
+		destChunk.Definition = dest
+
+		instruction := architecture.SelectInstruction(
+			InstructionSet,
+			dest,
+			architecture.SelectorHint{})
+
+		_, ok := instruction.(binaryRMOperation)
+		expect.True(t, ok)
+
+		constraints := instruction.Constraints()
+		expect.Equal(t, 2, len(constraints.RegisterSources))
+		clobberedRegister := constraints.RegisterSources[0].RegisterConstraint
+		nonClobberedRegister := constraints.RegisterSources[1].RegisterConstraint
+
+		builder := layout.NewSegmentBuilder()
+		instruction.EmitTo(
+			builder,
+			map[*architecture.RegisterConstraint]*architecture.Register{
+				clobberedRegister:    registers.Rdi,
+				nonClobberedRegister: registers.R8,
+			})
+		segment, err := builder.Finalize(amd64.ArchitectureLayout)
+		expect.Nil(t, err)
+		expect.Equal(t, []byte{0x49, 0x0f, 0xaf, 0xf8}, segment.Content.Flatten())
+		expect.Equal(t, layout.Definitions{}, segment.Definitions)
+		expect.Equal(t, layout.Relocations{}, segment.Relocations)
+	}
+}
+
+func TestSelectMulUintImmediateHasFreeRegisters(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(uint64(0x01020304))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Uint64,
+		Operation: &ir.BinaryOperation{
+			Kind: ir.Mul,
+			Src1: src,
+			Src2: imm,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{
+			NumFreeGeneralRegisters: 1,
+		})
+
+	_, ok := instruction.(imulRMIOperation)
+	expect.True(t, ok)
+
+	// Validate constraints
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+	expect.Equal(t, 1, len(constraints.RegisterDestinations))
+	expect.Equal(
+		t,
+		destChunk,
+		constraints.RegisterDestinations[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.NotNil(t, srcRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		srcRegister)
+
+	destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+	expect.NotNil(t, destRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		destRegister)
+
+	expect.True(t, srcRegister != destRegister)
+
+	// Validate encoding
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister:  registers.Rcx,
+			destRegister: registers.Rdx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x48, 0x69, 0xd1, 0x04, 0x03, 0x02, 0x01},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectMulUintImmediateCheapSoruce(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(uint64(0x01020304))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Uint64,
+		Operation: &ir.BinaryOperation{
+			Kind: ir.Mul,
+			Src1: src,
+			Src2: imm,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{
+			NumFreeGeneralRegisters: 1,
+			CheapRegisterSources: map[*ir.DefinitionChunk]struct{}{
+				srcChunk: struct{}{},
+			},
+		})
+
+	_, ok := instruction.(imulRMIOperation)
+	expect.True(t, ok)
+
+	// Validate constraints
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+	expect.Equal(t, 1, len(constraints.RegisterDestinations))
+	expect.Equal(
+		t,
+		destChunk,
+		constraints.RegisterDestinations[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.NotNil(t, srcRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		srcRegister)
+
+	destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+	expect.True(t, srcRegister == destRegister)
+
+	// Validate encoding
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Rcx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x48, 0x69, 0xc9, 0x04, 0x03, 0x02, 0x01},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(t, layout.Relocations{}, segment.Relocations)
+}
+
+func TestSelectMulUintImmediatePreferredReuse(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(uint64(0x01020304))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	destChunk := &ir.DefinitionChunk{}
+	dest := &ir.Definition{
+		Type: ir.Uint64,
+		Operation: &ir.BinaryOperation{
+			Kind: ir.Mul,
+			Src1: src,
+			Src2: imm,
+		},
+		Chunks: []*ir.DefinitionChunk{destChunk},
+	}
+	destChunk.Definition = dest
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		dest,
+		architecture.SelectorHint{
+			NumFreeGeneralRegisters: 1,
+			PreferredRegisterDestination: map[*ir.DefinitionChunk]*ir.DefinitionChunk{
+				destChunk: srcChunk,
+			},
+		})
+
+	_, ok := instruction.(imulRMIOperation)
+	expect.True(t, ok)
+
+	// Validate constraints
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+	expect.Equal(t, 1, len(constraints.RegisterDestinations))
+	expect.Equal(
+		t,
+		destChunk,
+		constraints.RegisterDestinations[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.NotNil(t, srcRegister)
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+			AnyFloat:   false,
+			Require:    nil,
+		},
+		srcRegister)
+
+	destRegister := constraints.RegisterDestinations[0].RegisterConstraint
+	expect.True(t, srcRegister == destRegister)
+
+	// Validate encoding
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Rcx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{0x48, 0x69, 0xc9, 0x04, 0x03, 0x02, 0x01},
+		segment.Content.Flatten())
 	expect.Equal(t, layout.Definitions{}, segment.Definitions)
 	expect.Equal(t, layout.Relocations{}, segment.Relocations)
 }

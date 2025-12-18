@@ -163,90 +163,12 @@ func _newRMI(
 	return spec
 }
 
-// Register-direct addressing ModRM instruction of the form:
-//
-// (imul) RMI Op/En:   <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)> <ib|iw|id>
-func newRMI(
-	isFloat bool,
-	operandSize int,
-	opCode []byte,
-	reg *architecture.Register,
-	rm *architecture.Register,
-	immediate []byte,
-) modRMSpec {
-	if isFloat {
-		if !reg.AllowFloatOperations || !rm.AllowFloatOperations {
-			panic("invalid register")
-		}
-	} else {
-		if !reg.AllowGeneralOperations || !rm.AllowGeneralOperations {
-			panic("invalid register")
-		}
-	}
-
-	return _newRMI(isFloat, operandSize, opCode, reg, rm, immediate)
-}
-
-// Register-direct addressing ModRM instruction of the form:
-//
-// (general) RM Op/En: <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)>
-// (SSE2) A Op/En:     <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)>
-func newRM(
-	isFloat bool,
-	operandSize int,
-	opCode []byte,
-	reg *architecture.Register,
-	rm *architecture.Register,
-) modRMSpec {
-	return newRMI(isFloat, operandSize, opCode, reg, rm, nil)
-}
-
-func _newMI(
-	operandSize int,
-	opCode []byte,
-	opCodeExtension byte,
-	rm *architecture.Register,
-	immediate []byte,
-) modRMSpec {
-	spec := modRMSpec{
-		requireRexBBit:    (rm.Encoding & 0x08) != 0,
-		opCode:            opCode,
-		mode:              directModRMMode,
-		reg:               opCodeExtension,
-		rm:                byte(rm.Encoding & 0x07),
-		sibAndOrImmediate: immediate,
-	}
-
-	switch operandSize {
-	case 1:
-		spec.maybeSetRexPrefix(rm.Encoding)
-	case 2:
-		spec.requireOperandSizePrefix = true
-	case 4:
-	case 8:
-		spec.requireRexWBit = true
-	default:
-		panic("should never happen")
-	}
-
-	if !rm.AllowGeneralOperations {
-		panic("invalid register")
-	}
-
-	return spec
-}
-
-// Register-direct addressing ModRM instruction of the form:
-//
-// (general) MI Op/En: <opCode> </digit> <ModRM:r/m (r, w)> <ib|iw|id immediate>
-func newMI(
+// MI / RMI immediate bytes
+func miImmediateBytes(
 	isUnsigned bool,
 	operandSize int,
-	opCode []byte,
-	opCodeExtension byte,
-	rm *architecture.Register,
 	immediate interface{}, // either int64 or uint64, matching isUnsigned
-) modRMSpec {
+) []byte {
 	if isUnsigned {
 		switch operandSize {
 		case 1:
@@ -295,6 +217,99 @@ func newMI(
 		immediateBytes = immediateBytes[:operandSize]
 	}
 
+	return immediateBytes
+}
+
+// Register-direct addressing ModRM instruction of the form:
+//
+// (imul) RMI Op/En:   <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)> <ib|iw|id>
+func newRMI(
+	isUnsigned bool,
+	operandSize int,
+	opCode []byte,
+	reg *architecture.Register,
+	rm *architecture.Register,
+	immediate interface{},
+) modRMSpec {
+	if !reg.AllowGeneralOperations || !rm.AllowGeneralOperations {
+		panic("invalid register")
+	}
+
+	immediateBytes := miImmediateBytes(isUnsigned, operandSize, immediate)
+	return _newRMI(false, operandSize, opCode, reg, rm, immediateBytes)
+}
+
+// Register-direct addressing ModRM instruction of the form:
+//
+// (general) RM Op/En: <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)>
+// (SSE2) A Op/En:     <opCode> <ModRM:reg (r, w)> <ModRM:r/m (r)>
+func newRM(
+	isFloat bool,
+	operandSize int,
+	opCode []byte,
+	reg *architecture.Register,
+	rm *architecture.Register,
+) modRMSpec {
+	if isFloat {
+		if !reg.AllowFloatOperations || !rm.AllowFloatOperations {
+			panic("invalid register")
+		}
+	} else {
+		if !reg.AllowGeneralOperations || !rm.AllowGeneralOperations {
+			panic("invalid register")
+		}
+	}
+
+	return _newRMI(isFloat, operandSize, opCode, reg, rm, nil)
+}
+
+func _newMI(
+	operandSize int,
+	opCode []byte,
+	opCodeExtension byte,
+	rm *architecture.Register,
+	immediate []byte,
+) modRMSpec {
+	spec := modRMSpec{
+		requireRexBBit:    (rm.Encoding & 0x08) != 0,
+		opCode:            opCode,
+		mode:              directModRMMode,
+		reg:               opCodeExtension,
+		rm:                byte(rm.Encoding & 0x07),
+		sibAndOrImmediate: immediate,
+	}
+
+	switch operandSize {
+	case 1:
+		spec.maybeSetRexPrefix(rm.Encoding)
+	case 2:
+		spec.requireOperandSizePrefix = true
+	case 4:
+	case 8:
+		spec.requireRexWBit = true
+	default:
+		panic("should never happen")
+	}
+
+	if !rm.AllowGeneralOperations {
+		panic("invalid register")
+	}
+
+	return spec
+}
+
+// Register-direct addressing ModRM instruction of the form:
+//
+// (general) MI Op/En: <opCode> </digit> <ModRM:r/m (r, w)> <ib|iw|id immediate>
+func newMI(
+	isUnsigned bool,
+	operandSize int,
+	opCode []byte,
+	opCodeExtension byte,
+	rm *architecture.Register,
+	immediate interface{}, // either int64 or uint64, matching isUnsigned
+) modRMSpec {
+	immediateBytes := miImmediateBytes(isUnsigned, operandSize, immediate)
 	return _newMI(operandSize, opCode, opCodeExtension, rm, immediateBytes)
 }
 

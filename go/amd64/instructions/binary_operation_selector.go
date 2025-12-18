@@ -10,6 +10,36 @@ import (
 	"github.com/pattyshack/chickadee/platform/layout"
 )
 
+type imulRMIOperation struct {
+	*ir.Definition
+
+	immediate interface{}
+
+	architecture.InstructionConstraints
+}
+
+func (op imulRMIOperation) Instruction() ir.Instruction {
+	return op.Definition
+}
+
+func (op imulRMIOperation) Constraints() architecture.InstructionConstraints {
+	return op.InstructionConstraints
+}
+
+func (op imulRMIOperation) EmitTo(
+	builder *layout.SegmentBuilder,
+	selectedRegisters map[*architecture.RegisterConstraint]*architecture.Register,
+) {
+	dest := op.RegisterDestinations[0].RegisterConstraint
+	src := op.RegisterSources[0].RegisterConstraint
+	mulIntImmediate(
+		builder,
+		op.Type,
+		selectedRegisters[dest],
+		selectedRegisters[src],
+		op.immediate)
+}
+
 type encodeMIFunc func(
 	*layout.SegmentBuilder,
 	ir.Type,
@@ -151,7 +181,12 @@ func (selector commonBinaryOperationSelector) Select(
 	binaryOp *ir.BinaryOperation,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
-	instruction := selector.maybeNewBinaryMIOperation(binaryOp, def, hint)
+	instruction := selector.maybeNewRMIOperation(def, binaryOp, hint)
+	if instruction != nil {
+		return instruction
+	}
+
+	instruction = selector.maybeNewBinaryMIOperation(def, binaryOp, hint)
 	if instruction != nil {
 		return instruction
 	}
@@ -189,9 +224,93 @@ func (selector commonBinaryOperationSelector) isMISupportedImmediate(
 	return true
 }
 
-func (selector commonBinaryOperationSelector) maybeNewBinaryMIOperation(
-	binaryOp *ir.BinaryOperation,
+func (selector commonBinaryOperationSelector) maybeNewRMIOperation(
 	def *ir.Definition,
+	binaryOp *ir.BinaryOperation,
+	hint architecture.SelectorHint,
+) architecture.MachineInstruction {
+	if binaryOp.Kind != ir.Mul {
+		return nil
+	}
+
+	src := binaryOp.Src1
+	immediate := binaryOp.Src2
+	if selector.isMISupportedImmediate(binaryOp.Src2) {
+		// do nothing
+	} else if selector.isSymmetric &&
+		selector.isMISupportedImmediate(binaryOp.Src1) {
+
+		src = binaryOp.Src2
+		immediate = binaryOp.Src1
+	} else {
+		return nil
+	}
+
+	srcChunk := src.Def().Chunks[0]
+	_, reuseRegister := hint.CheapRegisterSources[srcChunk]
+
+	if !reuseRegister {
+		reuseRegister = hint.NumFreeGeneralRegisters == 0
+	}
+
+	destChunk := def.Chunks[0]
+	if !reuseRegister {
+		preferred := hint.PreferredRegisterDestination[destChunk]
+		reuseRegister = preferred == srcChunk
+	}
+
+	constraints := architecture.InstructionConstraints{}
+	if reuseRegister {
+		register := &architecture.RegisterConstraint{
+			Clobbered:  true,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		}
+		constraints.RegisterSources = []architecture.RegisterMapping{
+			{
+				RegisterConstraint: register,
+				DefinitionChunk:    srcChunk,
+			},
+		}
+		constraints.RegisterDestinations = []architecture.RegisterMapping{
+			{
+				RegisterConstraint: register,
+				DefinitionChunk:    destChunk,
+			},
+		}
+	} else {
+		constraints.RegisterSources = []architecture.RegisterMapping{
+			{
+				RegisterConstraint: &architecture.RegisterConstraint{
+					Clobbered:  false,
+					AnyGeneral: true,
+					AnyFloat:   false,
+				},
+				DefinitionChunk: srcChunk,
+			},
+		}
+		constraints.RegisterDestinations = []architecture.RegisterMapping{
+			{
+				RegisterConstraint: &architecture.RegisterConstraint{
+					Clobbered:  true,
+					AnyGeneral: true,
+					AnyFloat:   false,
+				},
+				DefinitionChunk: destChunk,
+			},
+		}
+	}
+
+	return imulRMIOperation{
+		Definition:             def,
+		immediate:              immediate.(*ir.Immediate).Value,
+		InstructionConstraints: constraints,
+	}
+}
+
+func (selector commonBinaryOperationSelector) maybeNewBinaryMIOperation(
+	def *ir.Definition,
+	binaryOp *ir.BinaryOperation,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
 	if selector.encodeMI == nil {

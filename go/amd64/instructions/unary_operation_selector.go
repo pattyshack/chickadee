@@ -96,16 +96,16 @@ func (selector conversionSelector) Select(
 		_, reuseRegister = hint.CheapRegisterSources[srcChunk]
 
 		if !reuseRegister {
-			preferred := hint.PreferredRegisterDestination[destChunk]
-			reuseRegister = preferred == srcChunk
-		}
-
-		if !reuseRegister {
 			if selector.srcIsFloat {
 				reuseRegister = hint.NumFreeFloatRegisters == 0
 			} else {
 				reuseRegister = hint.NumFreeGeneralRegisters == 0
 			}
+		}
+
+		if !reuseRegister {
+			preferred := hint.PreferredRegisterDestination[destChunk]
+			reuseRegister = preferred == srcChunk
 		}
 	}
 

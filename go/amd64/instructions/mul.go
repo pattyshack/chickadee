@@ -1,8 +1,6 @@
 package instructions
 
 import (
-	"fmt"
-
 	"github.com/pattyshack/chickadee/ir"
 	"github.com/pattyshack/chickadee/platform/architecture"
 	"github.com/pattyshack/chickadee/platform/layout"
@@ -65,37 +63,24 @@ func mulIntImmediate(
 	simpleType ir.Type,
 	dest *architecture.Register,
 	src *architecture.Register,
-	immediate []byte,
+	immediate interface{},
 ) {
+	isUnsigned := false
 	operandSize := 0
 	switch size := simpleType.(type) {
 	case ir.SignedIntType:
 		operandSize = int(size)
 	case ir.UnsignedIntType:
+		isUnsigned = true
 		operandSize = int(size)
 	default:
 		panic("should never happen")
 	}
 
 	opCode := []byte{0x69}
-	expectedLength := operandSize
-	switch operandSize {
-	case 1:
+	if operandSize == 1 {
 		opCode = []byte{0x6B}
-		operandSize = 4
-	case 2, 4:
-	case 8:
-		expectedLength = 4
-	default:
-		panic("should never happen")
 	}
 
-	if len(immediate) != expectedLength {
-		panic(fmt.Sprintf(
-			"incorrect immediate length (%d != %d)",
-			len(immediate),
-			expectedLength))
-	}
-
-	newRMI(false, operandSize, opCode, dest, src, immediate).encode(builder)
+	newRMI(isUnsigned, operandSize, opCode, dest, src, immediate).encode(builder)
 }

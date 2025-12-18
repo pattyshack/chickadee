@@ -91,13 +91,11 @@ var InstructionSet = architecture.InstructionSet{
 		encodeRM:    add,
 	},
 
-	// TODO mul int/uint need to handle RMI encoding
 	MulUint: commonBinaryOperationSelector{
 		isFloat:     false,
 		isSymmetric: true,
 		encodeRM:    mul,
 	},
-	// TODO mul int/uint need to handle RMI encoding
 	MulInt: commonBinaryOperationSelector{
 		isFloat:     false,
 		isSymmetric: true,
