@@ -34,24 +34,49 @@ type SelectorHint struct {
 	PreferredRegisterDestination map[*ir.DefinitionChunk]*ir.DefinitionChunk
 }
 
+type JumpSelector interface {
+	Select(*ir.Jump, SelectorHint) MachineInstruction
+}
+
+type ConditionalJumpSelector interface {
+	Select(*ir.ConditionalJump, SelectorHint) MachineInstruction
+}
+
 type UnaryOperationSelector interface {
-	Select(
-		*ir.Definition,
-		*ir.UnaryOperation,
-		SelectorHint,
-	) MachineInstruction
+	Select(*ir.Definition, *ir.UnaryOperation, SelectorHint) MachineInstruction
 }
 
 type BinaryOperationSelector interface {
-	Select(
-		*ir.Definition,
-		*ir.BinaryOperation,
-		SelectorHint,
-	) MachineInstruction
+	Select(*ir.Definition, *ir.BinaryOperation, SelectorHint) MachineInstruction
 }
 
 // The set of machine instructions
 type InstructionSet struct {
+	Jump JumpSelector
+
+	JeqUint  ConditionalJumpSelector
+	JeqInt   ConditionalJumpSelector
+	JeqFloat ConditionalJumpSelector
+
+	JneUint  ConditionalJumpSelector
+	JneInt   ConditionalJumpSelector
+	JneFloat ConditionalJumpSelector
+
+	JltUint  ConditionalJumpSelector
+	JltInt   ConditionalJumpSelector
+	JltFloat ConditionalJumpSelector
+
+	JleUint  ConditionalJumpSelector
+	JleInt   ConditionalJumpSelector
+	JleFloat ConditionalJumpSelector
+
+	JgtUint  ConditionalJumpSelector
+	JgtInt   ConditionalJumpSelector
+	JgtFloat ConditionalJumpSelector
+
+	JgeUint  ConditionalJumpSelector
+	JgeInt   ConditionalJumpSelector
+	JgeFloat ConditionalJumpSelector
 
 	// Unary operations
 
@@ -119,13 +144,138 @@ func SelectInstruction(
 	case *ir.Definition:
 		return selectOperation(set, instruction, hint)
 	case *ir.Jump:
-		panic("TODO")
+		return set.Jump.Select(instruction, hint)
 	case *ir.ConditionalJump:
-		panic("TODO")
+		return selectConditionalJump(set, instruction, hint)
 	case *ir.Terminal:
 		panic("TODO")
 	default:
 		panic(fmt.Sprintf("unsupported instruction: %#v", instruction))
+	}
+}
+
+func selectConditionalJump(
+	set InstructionSet,
+	instruction *ir.ConditionalJump,
+	hint SelectorHint,
+) MachineInstruction {
+	switch instruction.Kind {
+	case ir.Jeq:
+		return selectJeq(set, instruction, hint)
+	case ir.Jne:
+		return selectJne(set, instruction, hint)
+	case ir.Jlt:
+		return selectJlt(set, instruction, hint)
+	case ir.Jle:
+		return selectJle(set, instruction, hint)
+	case ir.Jgt:
+		return selectJgt(set, instruction, hint)
+	case ir.Jge:
+		return selectJge(set, instruction, hint)
+	default:
+		panic("unsupported conditional jump kind: " + instruction.Kind)
+	}
+}
+
+func selectJeq(
+	set InstructionSet,
+	instruction *ir.ConditionalJump,
+	hint SelectorHint,
+) MachineInstruction {
+	switch instruction.Src1.Type().(type) {
+	case ir.SignedIntType:
+		return set.JeqInt.Select(instruction, hint)
+	case ir.UnsignedIntType:
+		return set.JeqUint.Select(instruction, hint)
+	case ir.FloatType:
+		return set.JeqFloat.Select(instruction, hint)
+	default:
+		panic(fmt.Sprintf("supported jeq type: %v", instruction.Src1.Type()))
+	}
+}
+
+func selectJne(
+	set InstructionSet,
+	instruction *ir.ConditionalJump,
+	hint SelectorHint,
+) MachineInstruction {
+	switch instruction.Src1.Type().(type) {
+	case ir.SignedIntType:
+		return set.JneInt.Select(instruction, hint)
+	case ir.UnsignedIntType:
+		return set.JneUint.Select(instruction, hint)
+	case ir.FloatType:
+		return set.JneFloat.Select(instruction, hint)
+	default:
+		panic(fmt.Sprintf("supported jne type: %v", instruction.Src1.Type()))
+	}
+}
+
+func selectJlt(
+	set InstructionSet,
+	instruction *ir.ConditionalJump,
+	hint SelectorHint,
+) MachineInstruction {
+	switch instruction.Src1.Type().(type) {
+	case ir.SignedIntType:
+		return set.JltInt.Select(instruction, hint)
+	case ir.UnsignedIntType:
+		return set.JltUint.Select(instruction, hint)
+	case ir.FloatType:
+		return set.JltFloat.Select(instruction, hint)
+	default:
+		panic(fmt.Sprintf("supported jlt type: %v", instruction.Src1.Type()))
+	}
+}
+
+func selectJle(
+	set InstructionSet,
+	instruction *ir.ConditionalJump,
+	hint SelectorHint,
+) MachineInstruction {
+	switch instruction.Src1.Type().(type) {
+	case ir.SignedIntType:
+		return set.JleInt.Select(instruction, hint)
+	case ir.UnsignedIntType:
+		return set.JleUint.Select(instruction, hint)
+	case ir.FloatType:
+		return set.JleFloat.Select(instruction, hint)
+	default:
+		panic(fmt.Sprintf("supported jle type: %v", instruction.Src1.Type()))
+	}
+}
+
+func selectJgt(
+	set InstructionSet,
+	instruction *ir.ConditionalJump,
+	hint SelectorHint,
+) MachineInstruction {
+	switch instruction.Src1.Type().(type) {
+	case ir.SignedIntType:
+		return set.JgtInt.Select(instruction, hint)
+	case ir.UnsignedIntType:
+		return set.JgtUint.Select(instruction, hint)
+	case ir.FloatType:
+		return set.JgtFloat.Select(instruction, hint)
+	default:
+		panic(fmt.Sprintf("supported jgt type: %v", instruction.Src1.Type()))
+	}
+}
+
+func selectJge(
+	set InstructionSet,
+	instruction *ir.ConditionalJump,
+	hint SelectorHint,
+) MachineInstruction {
+	switch instruction.Src1.Type().(type) {
+	case ir.SignedIntType:
+		return set.JgeInt.Select(instruction, hint)
+	case ir.UnsignedIntType:
+		return set.JgeUint.Select(instruction, hint)
+	case ir.FloatType:
+		return set.JgeFloat.Select(instruction, hint)
+	default:
+		panic(fmt.Sprintf("supported jge type: %v", instruction.Src1.Type()))
 	}
 }
 

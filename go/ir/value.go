@@ -126,7 +126,7 @@ func NewComplexImmediate(immediateType Type, value []byte) Value {
 func (*Immediate) isValue() {}
 
 func (imm *Immediate) Type() Type {
-	return imm.PseudoDefinition.Type
+	return imm.ImmediateType
 }
 
 func (imm *Immediate) Def() *Definition {

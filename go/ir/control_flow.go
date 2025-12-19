@@ -10,6 +10,11 @@ type ConditionalJumpKind string
 
 const (
 	Jeq = ConditionalJumpKind("Jeq")
+	Jne = ConditionalJumpKind("Jne")
+	Jlt = ConditionalJumpKind("Jlt")
+	Jle = ConditionalJumpKind("Jle")
+	Jgt = ConditionalJumpKind("Jgt")
+	Jge = ConditionalJumpKind("Jge")
 )
 
 type ConditionalJump struct {
