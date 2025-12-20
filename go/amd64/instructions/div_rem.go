@@ -69,7 +69,7 @@ func divRemInt(
 			size = 4
 		}
 
-		setIntImmediate(builder, registers.Rdx, int32(0))
+		setImmediate(builder, registers.Rdx, int32(0))
 
 		// div
 		newM(int(size), []byte{0xF7}, 6, divisor).encode(builder)

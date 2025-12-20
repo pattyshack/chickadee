@@ -95,6 +95,6 @@ func negFloat64(
 		panic("registers must be distinct")
 	}
 
-	setIntImmediate(builder, dest, float64SignMask)
+	setImmediate(builder, dest, float64SignMask)
 	xor(builder, ir.Uint64, dest, src)
 }

@@ -2,6 +2,7 @@ package instructions
 
 import (
 	"encoding/binary"
+	"math"
 
 	"github.com/pattyshack/chickadee/ir"
 	"github.com/pattyshack/chickadee/platform/architecture"
@@ -199,7 +200,7 @@ func copyGeneralToFloat(
 
 // <int/float dest> = <int/float immediate>
 //
-// NOTE: This operates only on general registers
+// NOTE: This operates only on general registers, even for float immediates
 //
 // https://www.felixcloutier.com/x86/mov
 //
@@ -207,10 +208,10 @@ func copyGeneralToFloat(
 // 16-bit (OI Op/En): B8 + rw iw
 // 32-bit (OI Op/En): B8 + rd id
 // 64-bit (OI Op/En): B8 + rd io
-func setIntImmediate(
+func setImmediate(
 	builder *layout.SegmentBuilder,
 	dest *architecture.Register, // general register
-	immediate interface{}, // int* or uint*
+	immediate interface{}, // int* or uint* or float*
 ) {
 	isZero := false
 	switch value := immediate.(type) {
@@ -230,6 +231,10 @@ func setIntImmediate(
 		isZero = value == 0
 	case uint64:
 		isZero = value == 0
+	case float32:
+		isZero = math.Float32bits(value) == 0
+	case float64:
+		isZero = math.Float64bits(value) == 0
 	default:
 		panic("should never happen")
 	}
