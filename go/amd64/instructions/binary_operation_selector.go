@@ -10,6 +10,34 @@ import (
 	"github.com/pattyshack/chickadee/platform/layout"
 )
 
+func isMISupportedImmediate(src ir.Value) bool {
+	immediate, ok := src.(*ir.Immediate)
+	if !ok {
+		return false
+	}
+
+	switch value := immediate.Value.(type) {
+	case int8:
+	case int16:
+	case int32:
+	case int64:
+		return math.MinInt32 <= value && value <= math.MaxInt32
+	case uint8:
+	case uint16:
+	case uint32:
+	case uint64:
+		return value <= math.MaxInt32
+	case float32:
+		return false
+	case float64:
+		return false
+	default:
+		panic(fmt.Sprintf("unsupported immediate value type: %#V", immediate.Value))
+	}
+
+	return true
+}
+
 type imulRMIOperation struct {
 	*ir.Definition
 
@@ -194,36 +222,6 @@ func (selector commonBinaryOperationSelector) Select(
 	return selector.newBinaryRMOperation(binaryOp, def, hint)
 }
 
-func (selector commonBinaryOperationSelector) isMISupportedImmediate(
-	src ir.Value,
-) bool {
-	if selector.isFloat {
-		return false
-	}
-
-	immediate, ok := src.(*ir.Immediate)
-	if !ok {
-		return false
-	}
-
-	switch value := immediate.Value.(type) {
-	case int8:
-	case int16:
-	case int32:
-	case int64:
-		return math.MinInt32 <= value && value <= math.MaxInt32
-	case uint8:
-	case uint16:
-	case uint32:
-	case uint64:
-		return value <= math.MaxInt32
-	default:
-		panic(fmt.Sprintf("unsupported immediate value type: %#V", immediate.Value))
-	}
-
-	return true
-}
-
 func (selector commonBinaryOperationSelector) maybeNewRMIOperation(
 	def *ir.Definition,
 	binaryOp *ir.BinaryOperation,
@@ -235,11 +233,9 @@ func (selector commonBinaryOperationSelector) maybeNewRMIOperation(
 
 	src := binaryOp.Src1
 	immediate := binaryOp.Src2
-	if selector.isMISupportedImmediate(binaryOp.Src2) {
+	if isMISupportedImmediate(binaryOp.Src2) {
 		// do nothing
-	} else if selector.isSymmetric &&
-		selector.isMISupportedImmediate(binaryOp.Src1) {
-
+	} else if selector.isSymmetric && isMISupportedImmediate(binaryOp.Src1) {
 		src = binaryOp.Src2
 		immediate = binaryOp.Src1
 	} else {
@@ -319,11 +315,9 @@ func (selector commonBinaryOperationSelector) maybeNewBinaryMIOperation(
 
 	src := binaryOp.Src1
 	immediate := binaryOp.Src2
-	if selector.isMISupportedImmediate(binaryOp.Src2) {
+	if isMISupportedImmediate(binaryOp.Src2) {
 		// do nothing
-	} else if selector.isSymmetric &&
-		selector.isMISupportedImmediate(binaryOp.Src1) {
-
+	} else if selector.isSymmetric && isMISupportedImmediate(binaryOp.Src1) {
 		src = binaryOp.Src2
 		immediate = binaryOp.Src1
 	} else {

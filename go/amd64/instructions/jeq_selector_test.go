@@ -1,0 +1,711 @@
+package instructions
+
+import (
+	"math"
+	"testing"
+
+	"github.com/pattyshack/gt/testing/expect"
+
+	amd64 "github.com/pattyshack/chickadee/amd64/layout"
+	"github.com/pattyshack/chickadee/amd64/registers"
+	"github.com/pattyshack/chickadee/ir"
+	"github.com/pattyshack/chickadee/platform/architecture"
+	"github.com/pattyshack/chickadee/platform/layout"
+)
+
+func TestJeqUintSameSource(t *testing.T) {
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Uint32,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+
+	src1 := ir.NewLocalReference("src")
+	src1.(*ir.LocalReference).UseDef = srcDef
+
+	src2 := ir.NewLocalReference("src")
+	src2.(*ir.LocalReference).UseDef = srcDef
+
+	jump := &ir.ConditionalJump{
+		Kind:  ir.Jeq,
+		Label: "jeq-label",
+		Src1:  src1,
+		Src2:  src2,
+	}
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		jump,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conditionalJumpInstruction)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Equal(
+		t,
+		architecture.InstructionConstraints{
+			RegisterSources: []architecture.RegisterMapping{
+				{
+					RegisterConstraint: &architecture.RegisterConstraint{
+						Clobbered:  false,
+						AnyGeneral: true,
+						AnyFloat:   false,
+					},
+					DefinitionChunk: srcChunk,
+				},
+			},
+		},
+		constraints)
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			constraints.RegisterSources[0].RegisterConstraint: registers.Rdx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x3b, 0xd2,
+			0x0f, 0x84, 0, 0, 0, 0,
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(
+		t,
+		layout.Relocations{
+			Labels: []*layout.Relocation{
+				{
+					Name:   "jeq-label",
+					Offset: 4,
+				},
+			},
+		},
+		segment.Relocations)
+}
+
+func TestJeqUint(t *testing.T) {
+	src1 := ir.NewLocalReference("src1")
+	src1Chunk := &ir.DefinitionChunk{}
+	src1Def := &ir.Definition{
+		Name:   "src1",
+		Type:   ir.Uint32,
+		Chunks: []*ir.DefinitionChunk{src1Chunk},
+	}
+	src1Chunk.Definition = src1Def
+	src1.(*ir.LocalReference).UseDef = src1Def
+
+	src2 := ir.NewLocalReference("src2")
+	src2Chunk := &ir.DefinitionChunk{}
+	src2Def := &ir.Definition{
+		Name:   "src2",
+		Type:   ir.Uint32,
+		Chunks: []*ir.DefinitionChunk{src2Chunk},
+	}
+	src2Chunk.Definition = src2Def
+	src2.(*ir.LocalReference).UseDef = src2Def
+
+	jump := &ir.ConditionalJump{
+		Kind:  ir.Jeq,
+		Label: "jeq-label",
+		Src1:  src1,
+		Src2:  src2,
+	}
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		jump,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conditionalJumpInstruction)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+	expect.Nil(t, constraints.RegisterDestinations)
+
+	expect.Equal(t, 2, len(constraints.RegisterSources))
+	expect.Equal(t, src1Chunk, constraints.RegisterSources[0].DefinitionChunk)
+	expect.Equal(t, src2Chunk, constraints.RegisterSources[1].DefinitionChunk)
+
+	src1Register := constraints.RegisterSources[0].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		},
+		src1Register)
+
+	src2Register := constraints.RegisterSources[1].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		},
+		src2Register)
+
+	expect.True(t, src1Register != src2Register)
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			src1Register: registers.Rdx,
+			src2Register: registers.Rcx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x3b, 0xd1,
+			0x0f, 0x84, 0, 0, 0, 0,
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(
+		t,
+		layout.Relocations{
+			Labels: []*layout.Relocation{
+				{
+					Name:   "jeq-label",
+					Offset: 4,
+				},
+			},
+		},
+		segment.Relocations)
+}
+
+func TestJeqUintRightImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Uint64,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(uint64(math.MaxInt32))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	jump := &ir.ConditionalJump{
+		Kind:  ir.Jeq,
+		Label: "jeq-label",
+		Src1:  src,
+		Src2:  imm,
+	}
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		jump,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conditionalJumpImmediateInstruction)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+	expect.Nil(t, constraints.RegisterDestinations)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		},
+		srcRegister)
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Rbx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x48, 0x81, 0xfb, 0xff, 0xff, 0xff, 0x7f,
+			0x0f, 0x84, 0, 0, 0, 0,
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(
+		t,
+		layout.Relocations{
+			Labels: []*layout.Relocation{
+				{
+					Name:   "jeq-label",
+					Offset: 9,
+				},
+			},
+		},
+		segment.Relocations)
+}
+
+func TestJeqUintLeftImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Uint64,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(uint64(math.MaxInt32))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Type:   imm.Type(),
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	jump := &ir.ConditionalJump{
+		Kind:  ir.Jeq,
+		Label: "jeq-label",
+		Src1:  imm,
+		Src2:  src,
+	}
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		jump,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conditionalJumpImmediateInstruction)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+	expect.Nil(t, constraints.RegisterDestinations)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		},
+		srcRegister)
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Rbx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x48, 0x81, 0xfb, 0xff, 0xff, 0xff, 0x7f,
+			0x0f, 0x84, 0, 0, 0, 0,
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(
+		t,
+		layout.Relocations{
+			Labels: []*layout.Relocation{
+				{
+					Name:   "jeq-label",
+					Offset: 9,
+				},
+			},
+		},
+		segment.Relocations)
+}
+
+func TestJeqInt(t *testing.T) {
+	src1 := ir.NewLocalReference("src1")
+	src1Chunk := &ir.DefinitionChunk{}
+	src1Def := &ir.Definition{
+		Name:   "src1",
+		Type:   ir.Int32,
+		Chunks: []*ir.DefinitionChunk{src1Chunk},
+	}
+	src1Chunk.Definition = src1Def
+	src1.(*ir.LocalReference).UseDef = src1Def
+
+	src2 := ir.NewLocalReference("src2")
+	src2Chunk := &ir.DefinitionChunk{}
+	src2Def := &ir.Definition{
+		Name:   "src2",
+		Type:   ir.Int32,
+		Chunks: []*ir.DefinitionChunk{src2Chunk},
+	}
+	src2Chunk.Definition = src2Def
+	src2.(*ir.LocalReference).UseDef = src2Def
+
+	jump := &ir.ConditionalJump{
+		Kind:  ir.Jeq,
+		Label: "jeq-label",
+		Src1:  src1,
+		Src2:  src2,
+	}
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		jump,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conditionalJumpInstruction)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+	expect.Nil(t, constraints.RegisterDestinations)
+
+	expect.Equal(t, 2, len(constraints.RegisterSources))
+	expect.Equal(t, src1Chunk, constraints.RegisterSources[0].DefinitionChunk)
+	expect.Equal(t, src2Chunk, constraints.RegisterSources[1].DefinitionChunk)
+
+	src1Register := constraints.RegisterSources[0].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		},
+		src1Register)
+
+	src2Register := constraints.RegisterSources[1].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		},
+		src2Register)
+
+	expect.True(t, src1Register != src2Register)
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			src1Register: registers.Rdx,
+			src2Register: registers.Rcx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x3b, 0xd1,
+			0x0f, 0x84, 0, 0, 0, 0,
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(
+		t,
+		layout.Relocations{
+			Labels: []*layout.Relocation{
+				{
+					Name:   "jeq-label",
+					Offset: 4,
+				},
+			},
+		},
+		segment.Relocations)
+}
+
+func TestJeqIntRightImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Int64,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(int64(math.MaxInt32))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	jump := &ir.ConditionalJump{
+		Kind:  ir.Jeq,
+		Label: "jeq-label",
+		Src1:  src,
+		Src2:  imm,
+	}
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		jump,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conditionalJumpImmediateInstruction)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+	expect.Nil(t, constraints.RegisterDestinations)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		},
+		srcRegister)
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Rbx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x48, 0x81, 0xfb, 0xff, 0xff, 0xff, 0x7f,
+			0x0f, 0x84, 0, 0, 0, 0,
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(
+		t,
+		layout.Relocations{
+			Labels: []*layout.Relocation{
+				{
+					Name:   "jeq-label",
+					Offset: 9,
+				},
+			},
+		},
+		segment.Relocations)
+}
+
+func TestJeqIntLeftImmediate(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Int64,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(int64(math.MaxInt32))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Type:   imm.Type(),
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	jump := &ir.ConditionalJump{
+		Kind:  ir.Jeq,
+		Label: "jeq-label",
+		Src1:  imm,
+		Src2:  src,
+	}
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		jump,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conditionalJumpImmediateInstruction)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+	expect.Nil(t, constraints.RegisterDestinations)
+
+	expect.Equal(t, 1, len(constraints.RegisterSources))
+	expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: true,
+			AnyFloat:   false,
+		},
+		srcRegister)
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Rbx,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x48, 0x81, 0xfb, 0xff, 0xff, 0xff, 0x7f,
+			0x0f, 0x84, 0, 0, 0, 0,
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(
+		t,
+		layout.Relocations{
+			Labels: []*layout.Relocation{
+				{
+					Name:   "jeq-label",
+					Offset: 9,
+				},
+			},
+		},
+		segment.Relocations)
+}
+
+func TestJeqFloat(t *testing.T) {
+	src := ir.NewLocalReference("src")
+	srcChunk := &ir.DefinitionChunk{}
+	srcDef := &ir.Definition{
+		Name:   "src",
+		Type:   ir.Float64,
+		Chunks: []*ir.DefinitionChunk{srcChunk},
+	}
+	srcChunk.Definition = srcDef
+	src.(*ir.LocalReference).UseDef = srcDef
+
+	imm := ir.NewBasicImmediate(float64(3))
+	immChunk := &ir.DefinitionChunk{}
+	immDef := &ir.Definition{
+		Name:   "imm",
+		Type:   imm.Type(),
+		Chunks: []*ir.DefinitionChunk{immChunk},
+	}
+	immChunk.Definition = immDef
+	imm.(*ir.Immediate).PseudoDefinition = immDef
+
+	jump := &ir.ConditionalJump{
+		Kind:  ir.Jeq,
+		Label: "jeq-label",
+		Src1:  src,
+		Src2:  imm,
+	}
+
+	instruction := architecture.SelectInstruction(
+		InstructionSet,
+		jump,
+		architecture.SelectorHint{})
+
+	_, ok := instruction.(conditionalJumpInstruction)
+	expect.True(t, ok)
+
+	constraints := instruction.Constraints()
+	expect.Nil(t, constraints.StackSources)
+	expect.Nil(t, constraints.StackDestination)
+	expect.Nil(t, constraints.RegisterDestinations)
+
+	expect.Equal(t, 2, len(constraints.RegisterSources))
+	expect.Equal(t, srcChunk, constraints.RegisterSources[0].DefinitionChunk)
+	expect.Equal(t, immChunk, constraints.RegisterSources[1].DefinitionChunk)
+
+	srcRegister := constraints.RegisterSources[0].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: false,
+			AnyFloat:   true,
+		},
+		srcRegister)
+
+	immRegister := constraints.RegisterSources[1].RegisterConstraint
+	expect.Equal(
+		t,
+		&architecture.RegisterConstraint{
+			Clobbered:  false,
+			AnyGeneral: false,
+			AnyFloat:   true,
+		},
+		immRegister)
+
+	expect.True(t, srcRegister != immRegister)
+
+	builder := layout.NewSegmentBuilder()
+	instruction.EmitTo(
+		builder,
+		map[*architecture.RegisterConstraint]*architecture.Register{
+			srcRegister: registers.Xmm1,
+			immRegister: registers.Xmm2,
+		})
+	segment, err := builder.Finalize(amd64.ArchitectureLayout)
+	expect.Nil(t, err)
+	expect.Equal(
+		t,
+		[]byte{
+			0x66, 0x0f, 0x2f, 0xca,
+			0x0f, 0x84, 0, 0, 0, 0,
+		},
+		segment.Content.Flatten())
+	expect.Equal(t, layout.Definitions{}, segment.Definitions)
+	expect.Equal(
+		t,
+		layout.Relocations{
+			Labels: []*layout.Relocation{
+				{
+					Name:   "jeq-label",
+					Offset: 6,
+				},
+			},
+		},
+		segment.Relocations)
+}

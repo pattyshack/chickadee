@@ -5,6 +5,110 @@ import (
 )
 
 var InstructionSet = architecture.InstructionSet{
+	Jump: jumpSelector{},
+
+	JeqUint: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jeIntImmediate,
+		encodeLeftImmediate:  jeIntImmediate,
+		encode:               je,
+	},
+	JeqInt: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jeIntImmediate,
+		encodeLeftImmediate:  jeIntImmediate,
+		encode:               je,
+	},
+	JeqFloat: conditionalJumpSelector{
+		isFloat: true,
+		encode:  je,
+	},
+
+	JneUint: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jneIntImmediate,
+		encodeLeftImmediate:  jneIntImmediate,
+		encode:               jne,
+	},
+	JneInt: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jneIntImmediate,
+		encodeLeftImmediate:  jneIntImmediate,
+		encode:               jne,
+	},
+	JneFloat: conditionalJumpSelector{
+		isFloat: true,
+		encode:  jne,
+	},
+
+	JltUint: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jltIntImmediate,
+		encodeLeftImmediate:  jgtIntImmediate, // (i < s) == (s > i)
+		encode:               jlt,
+	},
+	JltInt: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jltIntImmediate,
+		encodeLeftImmediate:  jgtIntImmediate, // (i < s) == (s > i)
+		encode:               jlt,
+	},
+	JltFloat: conditionalJumpSelector{
+		isFloat: true,
+		encode:  jlt,
+	},
+
+	JleUint: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jleIntImmediate,
+		encodeLeftImmediate:  jgeIntImmediate, // (i <= s) == (s >= i)
+		encode:               jle,
+	},
+	JleInt: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jleIntImmediate,
+		encodeLeftImmediate:  jgeIntImmediate, // (i <= s) == (s >= i)
+		encode:               jle,
+	},
+	JleFloat: conditionalJumpSelector{
+		isFloat: true,
+		encode:  jle,
+	},
+
+	JgtUint: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jgtIntImmediate,
+		encodeLeftImmediate:  jltIntImmediate, // (i > s) == (s < i)
+		encode:               jgt,
+	},
+	JgtInt: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jgtIntImmediate,
+		encodeLeftImmediate:  jltIntImmediate, // (i > s) == (s < i)
+		encode:               jgt,
+	},
+	JgtFloat: conditionalJumpSelector{
+		isFloat: true,
+		encode:  jgt,
+	},
+
+	JgeUint: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jgeIntImmediate,
+		encodeLeftImmediate:  jleIntImmediate, // (i >= s) == (s <= i)
+		encode:               jge,
+	},
+	JgeInt: conditionalJumpSelector{
+		isFloat:              false,
+		encodeRightImmediate: jgeIntImmediate,
+		encodeLeftImmediate:  jleIntImmediate, // (i >= s) == (s <= i)
+		encode:               jge,
+	},
+	JgeFloat: conditionalJumpSelector{
+		isFloat: true,
+		encode:  jge,
+	},
+
 	NotUint: unaryMSelector{
 		encodeM: not,
 	},
