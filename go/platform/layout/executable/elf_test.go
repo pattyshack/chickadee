@@ -97,7 +97,7 @@ func (ElfSuite) TestStringTableFromSymbols(t *testing.T) {
 // start:
 //
 //	call _init
-//	movq $60, %rax # exit sys call id
+//	movq $231, %rax # exit_group sys call id
 //	movq exit_code(%rip), %rdi
 //	syscall
 //
@@ -158,7 +158,7 @@ func (ElfSuite) newWriter(t *testing.T) ElfWriter {
 	builder.Text.AppendData(
 		[]byte{
 			0xe8, 0, 0, 0, 0, // call init - (relocation)
-			0x48, 0xc7, 0xc0, 0x3c, 0, 0, 0, // movq $60, %rax
+			0x48, 0xc7, 0xc0, 0xe7, 0, 0, 0, // movq $231, %rax
 			0x48, 0x8b, 0x3d, 0, 0, 0, 0, // movq exit_code(%rip), %rdi - (relocation)
 			0x0f, 0x05, // syscall
 		},
@@ -457,10 +457,10 @@ func (s ElfSuite) TestWrite(t *testing.T) {
 
 			expect.Equal(t, writer.Text.Flatten(), textContent)
 
-			// movq $60, %rax
+			// movq $231, %rax
 			expect.True(t, bytes.Contains(
 				textContent,
-				[]byte{0x48, 0xc7, 0xc0, 0x3c, 0, 0, 0}))
+				[]byte{0x48, 0xc7, 0xc0, 0xe7, 0, 0, 0}))
 
 			// prefix of: movq %rax, exit_code(%rip)
 			expect.True(t, bytes.Contains(textContent, []byte{0x48, 0x89, 0x05}))
