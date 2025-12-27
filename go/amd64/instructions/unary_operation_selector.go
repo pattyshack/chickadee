@@ -82,6 +82,7 @@ type conversionSelector struct {
 }
 
 func (selector conversionSelector) Select(
+	config architecture.Config,
 	def *ir.Definition,
 	unaryOp *ir.UnaryOperation,
 	hint architecture.SelectorHint,
@@ -164,12 +165,13 @@ type uintToFloatSelector struct {
 }
 
 func (selector uintToFloatSelector) Select(
+	config architecture.Config,
 	def *ir.Definition,
 	unaryOp *ir.UnaryOperation,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
 	if unaryOp.Src.Def().Size() != 8 {
-		return selector.smallUint.Select(def, unaryOp, hint)
+		return selector.smallUint.Select(config, def, unaryOp, hint)
 	}
 
 	destChunk := def.Chunks[0]
@@ -214,6 +216,7 @@ type unaryMSelector struct {
 }
 
 func (selector unaryMSelector) Select(
+	config architecture.Config,
 	def *ir.Definition,
 	unaryOp *ir.UnaryOperation,
 	hint architecture.SelectorHint,
@@ -251,12 +254,13 @@ type negFloatSelector struct {
 }
 
 func (selector negFloatSelector) Select(
+	config architecture.Config,
 	def *ir.Definition,
 	unaryOp *ir.UnaryOperation,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
 	if def.Type.Size() == 4 {
-		return selector.f32.Select(def, unaryOp, hint)
+		return selector.f32.Select(config, def, unaryOp, hint)
 	}
 
 	dest := &architecture.RegisterConstraint{

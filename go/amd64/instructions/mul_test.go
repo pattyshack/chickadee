@@ -292,7 +292,7 @@ func TestSelectMulInt(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -350,7 +350,7 @@ func TestSelectMulUint(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -408,7 +408,7 @@ func TestSelectMulFloat(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -486,7 +486,7 @@ func TestSelectMulIntImmediate(t *testing.T) {
 			}
 
 			instruction := architecture.SelectInstruction(
-				InstructionSet,
+				testConfig,
 				dest,
 				architecture.SelectorHint{})
 
@@ -595,7 +595,7 @@ func TestSelectMulUintImmediate(t *testing.T) {
 			}
 
 			instruction := architecture.SelectInstruction(
-				InstructionSet,
+				testConfig,
 				dest,
 				architecture.SelectorHint{})
 
@@ -689,7 +689,7 @@ func TestSelectMulIntOversizedImmediate(t *testing.T) {
 		destChunk.Definition = dest
 
 		instruction := architecture.SelectInstruction(
-			InstructionSet,
+			testConfig,
 			dest,
 			architecture.SelectorHint{})
 
@@ -748,7 +748,7 @@ func TestSelectMulUintImmediateHasFreeRegisters(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			NumFreeGeneralRegisters: 1,
@@ -849,7 +849,7 @@ func TestSelectMulUintImmediateCheapSoruce(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			NumFreeGeneralRegisters: 1,
@@ -941,7 +941,7 @@ func TestSelectMulUintImmediatePreferredReuse(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			NumFreeGeneralRegisters: 1,

@@ -254,7 +254,7 @@ func TestSelectAndIntImmediate(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -313,7 +313,7 @@ func TestSelectAndInt(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -371,7 +371,7 @@ func TestSelectAndUintImmediate(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -427,7 +427,7 @@ func TestSelectAndUint(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 

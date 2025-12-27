@@ -42,7 +42,7 @@ func TestJneUint(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -138,7 +138,7 @@ func TestJneUintRightImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -221,7 +221,7 @@ func TestJneUintLeftImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -304,7 +304,7 @@ func TestJneInt(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -400,7 +400,7 @@ func TestJneIntRightImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -483,7 +483,7 @@ func TestJneIntLeftImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -566,7 +566,7 @@ func TestJneFloat(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 

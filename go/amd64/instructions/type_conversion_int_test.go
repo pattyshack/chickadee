@@ -723,7 +723,7 @@ func TestSelectIntToUint(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			NumFreeGeneralRegisters: 1,
@@ -815,7 +815,7 @@ func TestSelectIntToUintCheapSource(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			CheapRegisterSources: map[*ir.DefinitionChunk]struct{}{
@@ -900,7 +900,7 @@ func TestSelectIntToUintPreferredReuse(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			PreferredRegisterDestination: map[*ir.DefinitionChunk]*ir.DefinitionChunk{
@@ -985,7 +985,7 @@ func TestSelectIntToUintNoFreeRegisters(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			NumFreeGeneralRegisters: 0,
@@ -1067,7 +1067,7 @@ func TestSelectIntToInt(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			NumFreeGeneralRegisters: 1,
@@ -1159,7 +1159,7 @@ func TestSelectIntToFloat(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 

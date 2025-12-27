@@ -36,7 +36,7 @@ func TestJeqUintSameSource(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -118,7 +118,7 @@ func TestJeqUint(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -214,7 +214,7 @@ func TestJeqUintRightImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -297,7 +297,7 @@ func TestJeqUintLeftImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -380,7 +380,7 @@ func TestJeqInt(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -476,7 +476,7 @@ func TestJeqIntRightImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -559,7 +559,7 @@ func TestJeqIntLeftImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -642,7 +642,7 @@ func TestJeqFloat(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 

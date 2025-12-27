@@ -42,7 +42,7 @@ func TestJltUint(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -138,7 +138,7 @@ func TestJltUintRightImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -221,7 +221,7 @@ func TestJltUintLeftImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -304,7 +304,7 @@ func TestJltInt(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -400,7 +400,7 @@ func TestJltIntRightImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -483,7 +483,7 @@ func TestJltIntLeftImmediate(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 
@@ -566,7 +566,7 @@ func TestJltFloat(t *testing.T) {
 	}
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		jump,
 		architecture.SelectorHint{})
 

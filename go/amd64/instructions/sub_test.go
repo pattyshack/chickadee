@@ -473,7 +473,7 @@ func TestSelectSubIntRightImmediate(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -560,7 +560,7 @@ func TestSelectSubIntLeftImmediate(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -658,7 +658,7 @@ func TestSelectSubIntIgnoreCheapSrc2(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			CheapRegisterSources: map[*ir.DefinitionChunk]struct{}{
@@ -767,7 +767,7 @@ func TestSelectSubUintRightImmediate(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -854,7 +854,7 @@ func TestSelectSubUint(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			CheapRegisterSources: map[*ir.DefinitionChunk]struct{}{
@@ -963,7 +963,7 @@ func TestSelectSubFloat(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			CheapRegisterSources: map[*ir.DefinitionChunk]struct{}{

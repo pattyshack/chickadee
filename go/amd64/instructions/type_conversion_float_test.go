@@ -409,7 +409,7 @@ func TestSelectFloatToInt(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -502,7 +502,7 @@ func TestSelectFloatToUint(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -595,7 +595,7 @@ func TestSelectFloatToFloat(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			NumFreeFloatRegisters: 1,
@@ -690,7 +690,7 @@ func TestSelectFloatToFloatNoFreeRegister(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			NumFreeFloatRegisters: 0,

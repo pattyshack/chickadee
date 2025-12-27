@@ -108,6 +108,7 @@ func (inst conditionalJumpImmediateInstruction) EmitTo(
 type jumpSelector struct{}
 
 func (jumpSelector) Select(
+	config architecture.Config,
 	jump *ir.Jump,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
@@ -125,6 +126,7 @@ type conditionalJumpSelector struct {
 }
 
 func (selector conditionalJumpSelector) Select(
+	config architecture.Config,
 	jump *ir.ConditionalJump,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {

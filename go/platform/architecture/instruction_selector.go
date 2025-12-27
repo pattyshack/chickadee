@@ -35,19 +35,29 @@ type SelectorHint struct {
 }
 
 type JumpSelector interface {
-	Select(*ir.Jump, SelectorHint) MachineInstruction
+	Select(Config, *ir.Jump, SelectorHint) MachineInstruction
 }
 
 type ConditionalJumpSelector interface {
-	Select(*ir.ConditionalJump, SelectorHint) MachineInstruction
+	Select(Config, *ir.ConditionalJump, SelectorHint) MachineInstruction
 }
 
 type UnaryOperationSelector interface {
-	Select(*ir.Definition, *ir.UnaryOperation, SelectorHint) MachineInstruction
+	Select(
+		Config,
+		*ir.Definition,
+		*ir.UnaryOperation,
+		SelectorHint,
+	) MachineInstruction
 }
 
 type BinaryOperationSelector interface {
-	Select(*ir.Definition, *ir.BinaryOperation, SelectorHint) MachineInstruction
+	Select(
+		Config,
+		*ir.Definition,
+		*ir.BinaryOperation,
+		SelectorHint,
+	) MachineInstruction
 }
 
 // The set of machine instructions
@@ -136,17 +146,17 @@ type InstructionSet struct {
 }
 
 func SelectInstruction(
-	set InstructionSet,
+	config Config,
 	inst ir.Instruction,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction := inst.(type) {
 	case *ir.Definition:
-		return selectOperation(set, instruction, hint)
+		return selectOperation(config, instruction, hint)
 	case *ir.Jump:
-		return set.Jump.Select(instruction, hint)
+		return config.Jump.Select(config, instruction, hint)
 	case *ir.ConditionalJump:
-		return selectConditionalJump(set, instruction, hint)
+		return selectConditionalJump(config, instruction, hint)
 	case *ir.Terminal:
 		panic("TODO")
 	default:
@@ -155,140 +165,140 @@ func SelectInstruction(
 }
 
 func selectConditionalJump(
-	set InstructionSet,
+	config Config,
 	instruction *ir.ConditionalJump,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Kind {
 	case ir.Jeq:
-		return selectJeq(set, instruction, hint)
+		return selectJeq(config, instruction, hint)
 	case ir.Jne:
-		return selectJne(set, instruction, hint)
+		return selectJne(config, instruction, hint)
 	case ir.Jlt:
-		return selectJlt(set, instruction, hint)
+		return selectJlt(config, instruction, hint)
 	case ir.Jle:
-		return selectJle(set, instruction, hint)
+		return selectJle(config, instruction, hint)
 	case ir.Jgt:
-		return selectJgt(set, instruction, hint)
+		return selectJgt(config, instruction, hint)
 	case ir.Jge:
-		return selectJge(set, instruction, hint)
+		return selectJge(config, instruction, hint)
 	default:
 		panic("unsupported conditional jump kind: " + instruction.Kind)
 	}
 }
 
 func selectJeq(
-	set InstructionSet,
+	config Config,
 	instruction *ir.ConditionalJump,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
-		return set.JeqInt.Select(instruction, hint)
+		return config.JeqInt.Select(config, instruction, hint)
 	case ir.UnsignedIntType:
-		return set.JeqUint.Select(instruction, hint)
+		return config.JeqUint.Select(config, instruction, hint)
 	case ir.FloatType:
-		return set.JeqFloat.Select(instruction, hint)
+		return config.JeqFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jeq type: %v", instruction.Src1.Type()))
 	}
 }
 
 func selectJne(
-	set InstructionSet,
+	config Config,
 	instruction *ir.ConditionalJump,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
-		return set.JneInt.Select(instruction, hint)
+		return config.JneInt.Select(config, instruction, hint)
 	case ir.UnsignedIntType:
-		return set.JneUint.Select(instruction, hint)
+		return config.JneUint.Select(config, instruction, hint)
 	case ir.FloatType:
-		return set.JneFloat.Select(instruction, hint)
+		return config.JneFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jne type: %v", instruction.Src1.Type()))
 	}
 }
 
 func selectJlt(
-	set InstructionSet,
+	config Config,
 	instruction *ir.ConditionalJump,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
-		return set.JltInt.Select(instruction, hint)
+		return config.JltInt.Select(config, instruction, hint)
 	case ir.UnsignedIntType:
-		return set.JltUint.Select(instruction, hint)
+		return config.JltUint.Select(config, instruction, hint)
 	case ir.FloatType:
-		return set.JltFloat.Select(instruction, hint)
+		return config.JltFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jlt type: %v", instruction.Src1.Type()))
 	}
 }
 
 func selectJle(
-	set InstructionSet,
+	config Config,
 	instruction *ir.ConditionalJump,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
-		return set.JleInt.Select(instruction, hint)
+		return config.JleInt.Select(config, instruction, hint)
 	case ir.UnsignedIntType:
-		return set.JleUint.Select(instruction, hint)
+		return config.JleUint.Select(config, instruction, hint)
 	case ir.FloatType:
-		return set.JleFloat.Select(instruction, hint)
+		return config.JleFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jle type: %v", instruction.Src1.Type()))
 	}
 }
 
 func selectJgt(
-	set InstructionSet,
+	config Config,
 	instruction *ir.ConditionalJump,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
-		return set.JgtInt.Select(instruction, hint)
+		return config.JgtInt.Select(config, instruction, hint)
 	case ir.UnsignedIntType:
-		return set.JgtUint.Select(instruction, hint)
+		return config.JgtUint.Select(config, instruction, hint)
 	case ir.FloatType:
-		return set.JgtFloat.Select(instruction, hint)
+		return config.JgtFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jgt type: %v", instruction.Src1.Type()))
 	}
 }
 
 func selectJge(
-	set InstructionSet,
+	config Config,
 	instruction *ir.ConditionalJump,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
-		return set.JgeInt.Select(instruction, hint)
+		return config.JgeInt.Select(config, instruction, hint)
 	case ir.UnsignedIntType:
-		return set.JgeUint.Select(instruction, hint)
+		return config.JgeUint.Select(config, instruction, hint)
 	case ir.FloatType:
-		return set.JgeFloat.Select(instruction, hint)
+		return config.JgeFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jge type: %v", instruction.Src1.Type()))
 	}
 }
 
 func selectOperation(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation := instruction.Operation.(type) {
 	case *ir.UnaryOperation:
-		return selectUnaryOperation(set, instruction, operation, hint)
+		return selectUnaryOperation(config, instruction, operation, hint)
 	case *ir.BinaryOperation:
-		return selectBinaryOperation(set, instruction, operation, hint)
+		return selectBinaryOperation(config, instruction, operation, hint)
 	case *ir.FuncCall:
 		panic("TODO")
 	default:
@@ -297,308 +307,308 @@ func selectOperation(
 }
 
 func selectUnaryOperation(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.UnaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation.Kind {
 	case ir.Neg:
-		return selectNeg(set, instruction, operation, hint)
+		return selectNeg(config, instruction, operation, hint)
 	case ir.Not:
-		return selectNot(set, instruction, operation, hint)
+		return selectNot(config, instruction, operation, hint)
 	case ir.ToInt8, ir.ToInt16, ir.ToInt32, ir.ToInt64:
-		return selectToInt(set, instruction, operation, hint)
+		return selectToInt(config, instruction, operation, hint)
 	case ir.ToUint8, ir.ToUint16, ir.ToUint32, ir.ToUint64:
-		return selectToUint(set, instruction, operation, hint)
+		return selectToUint(config, instruction, operation, hint)
 	case ir.ToFloat32, ir.ToFloat64:
-		return selectToFloat(set, instruction, operation, hint)
+		return selectToFloat(config, instruction, operation, hint)
 	default:
 		panic("unsupported unary operation: " + operation.Kind)
 	}
 }
 
 func selectNeg(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.UnaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.SignedIntType:
-		return set.NegInt.Select(instruction, operation, hint)
+		return config.NegInt.Select(config, instruction, operation, hint)
 	case ir.FloatType:
-		return set.NegFloat.Select(instruction, operation, hint)
+		return config.NegFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported neg type: %v", instruction.Type))
 	}
 }
 
 func selectNot(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.UnaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.NotUint.Select(instruction, operation, hint)
+		return config.NotUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.NotInt.Select(instruction, operation, hint)
+		return config.NotInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported not type: %v", instruction.Type))
 	}
 }
 
 func selectToInt(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.UnaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation.Src.Def().Type.(type) {
 	case ir.UnsignedIntType:
-		return set.UintToInt.Select(instruction, operation, hint)
+		return config.UintToInt.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.IntToInt.Select(instruction, operation, hint)
+		return config.IntToInt.Select(config, instruction, operation, hint)
 	case ir.FloatType:
-		return set.FloatToInt.Select(instruction, operation, hint)
+		return config.FloatToInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported toInt type: %v", instruction.Type))
 	}
 }
 
 func selectToUint(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.UnaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation.Src.Def().Type.(type) {
 	case ir.UnsignedIntType:
-		return set.UintToUint.Select(instruction, operation, hint)
+		return config.UintToUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.IntToUint.Select(instruction, operation, hint)
+		return config.IntToUint.Select(config, instruction, operation, hint)
 	case ir.FloatType:
-		return set.FloatToUint.Select(instruction, operation, hint)
+		return config.FloatToUint.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported toUint type: %v", instruction.Type))
 	}
 }
 
 func selectToFloat(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.UnaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation.Src.Def().Type.(type) {
 	case ir.UnsignedIntType:
-		return set.UintToFloat.Select(instruction, operation, hint)
+		return config.UintToFloat.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.IntToFloat.Select(instruction, operation, hint)
+		return config.IntToFloat.Select(config, instruction, operation, hint)
 	case ir.FloatType:
-		return set.FloatToFloat.Select(instruction, operation, hint)
+		return config.FloatToFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported toFloat type: %v", instruction.Type))
 	}
 }
 
 func selectBinaryOperation(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation.Kind {
 	case ir.Add:
-		return selectAdd(set, instruction, operation, hint)
+		return selectAdd(config, instruction, operation, hint)
 	case ir.Mul:
-		return selectMul(set, instruction, operation, hint)
+		return selectMul(config, instruction, operation, hint)
 	case ir.Sub:
-		return selectSub(set, instruction, operation, hint)
+		return selectSub(config, instruction, operation, hint)
 	case ir.Div:
-		return selectDiv(set, instruction, operation, hint)
+		return selectDiv(config, instruction, operation, hint)
 	case ir.Rem:
-		return selectRem(set, instruction, operation, hint)
+		return selectRem(config, instruction, operation, hint)
 	case ir.Shl:
-		return selectShl(set, instruction, operation, hint)
+		return selectShl(config, instruction, operation, hint)
 	case ir.Shr:
-		return selectShr(set, instruction, operation, hint)
+		return selectShr(config, instruction, operation, hint)
 	case ir.And:
-		return selectAnd(set, instruction, operation, hint)
+		return selectAnd(config, instruction, operation, hint)
 	case ir.Or:
-		return selectOr(set, instruction, operation, hint)
+		return selectOr(config, instruction, operation, hint)
 	case ir.Xor:
-		return selectXor(set, instruction, operation, hint)
+		return selectXor(config, instruction, operation, hint)
 	default:
 		panic("unsupported binary operation: " + operation.Kind)
 	}
 }
 
 func selectAdd(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.AddUint.Select(instruction, operation, hint)
+		return config.AddUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.AddInt.Select(instruction, operation, hint)
+		return config.AddInt.Select(config, instruction, operation, hint)
 	case ir.FloatType:
-		return set.AddFloat.Select(instruction, operation, hint)
+		return config.AddFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported add type: %v", instruction.Type))
 	}
 }
 
 func selectMul(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.MulUint.Select(instruction, operation, hint)
+		return config.MulUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.MulInt.Select(instruction, operation, hint)
+		return config.MulInt.Select(config, instruction, operation, hint)
 	case ir.FloatType:
-		return set.MulFloat.Select(instruction, operation, hint)
+		return config.MulFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported mul type: %v", instruction.Type))
 	}
 }
 
 func selectSub(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.SubUint.Select(instruction, operation, hint)
+		return config.SubUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.SubInt.Select(instruction, operation, hint)
+		return config.SubInt.Select(config, instruction, operation, hint)
 	case ir.FloatType:
-		return set.SubFloat.Select(instruction, operation, hint)
+		return config.SubFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported sub type: %v", instruction.Type))
 	}
 }
 
 func selectDiv(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.DivUint.Select(instruction, operation, hint)
+		return config.DivUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.DivInt.Select(instruction, operation, hint)
+		return config.DivInt.Select(config, instruction, operation, hint)
 	case ir.FloatType:
-		return set.DivFloat.Select(instruction, operation, hint)
+		return config.DivFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported div type: %v", instruction.Type))
 	}
 }
 
 func selectRem(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.RemUint.Select(instruction, operation, hint)
+		return config.RemUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.RemInt.Select(instruction, operation, hint)
+		return config.RemInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported rem type: %v", instruction.Type))
 	}
 }
 
 func selectShl(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.ShlUint.Select(instruction, operation, hint)
+		return config.ShlUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.ShlInt.Select(instruction, operation, hint)
+		return config.ShlInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported shl type: %v", instruction.Type))
 	}
 }
 
 func selectShr(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.ShrUint.Select(instruction, operation, hint)
+		return config.ShrUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.ShrInt.Select(instruction, operation, hint)
+		return config.ShrInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported shr type: %v", instruction.Type))
 	}
 }
 
 func selectAnd(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.AndUint.Select(instruction, operation, hint)
+		return config.AndUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.AndInt.Select(instruction, operation, hint)
+		return config.AndInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported and type: %v", instruction.Type))
 	}
 }
 
 func selectOr(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.OrUint.Select(instruction, operation, hint)
+		return config.OrUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.OrInt.Select(instruction, operation, hint)
+		return config.OrInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported or type: %v", instruction.Type))
 	}
 }
 
 func selectXor(
-	set InstructionSet,
+	config Config,
 	instruction *ir.Definition,
 	operation *ir.BinaryOperation,
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
 	case ir.UnsignedIntType:
-		return set.XorUint.Select(instruction, operation, hint)
+		return config.XorUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
-		return set.XorInt.Select(instruction, operation, hint)
+		return config.XorInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported xor type: %v", instruction.Type))
 	}

@@ -14,6 +14,13 @@ import (
 	"github.com/pattyshack/chickadee/platform/layout"
 )
 
+var (
+	testConfig = architecture.Config{
+		RegisterSet:    registers.Registers,
+		InstructionSet: InstructionSet,
+	}
+)
+
 func TestAddInt8(t *testing.T) {
 	// add eax, ecx
 	builder := layout.NewSegmentBuilder()
@@ -297,7 +304,7 @@ func TestSelectAddIntImmediate(t *testing.T) {
 			}
 
 			instruction := architecture.SelectInstruction(
-				InstructionSet,
+				testConfig,
 				dest,
 				architecture.SelectorHint{})
 
@@ -405,7 +412,7 @@ func TestSelectAddUIntImmediate(t *testing.T) {
 			}
 
 			instruction := architecture.SelectInstruction(
-				InstructionSet,
+				testConfig,
 				dest,
 				architecture.SelectorHint{})
 
@@ -509,7 +516,7 @@ func TestSelectAddIntOversizedImmediate(t *testing.T) {
 			}
 
 			instruction := architecture.SelectInstruction(
-				InstructionSet,
+				testConfig,
 				dest,
 				architecture.SelectorHint{})
 
@@ -638,7 +645,7 @@ func TestSelectAddUintOversizedImmediate(t *testing.T) {
 		}
 
 		instruction := architecture.SelectInstruction(
-			InstructionSet,
+			testConfig,
 			dest,
 			architecture.SelectorHint{})
 
@@ -755,7 +762,7 @@ func TestSelectAddIntNoHint(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 
@@ -860,7 +867,7 @@ func TestSelectAddIntCheapSrc1(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			CheapRegisterSources: map[*ir.DefinitionChunk]struct{}{
@@ -969,7 +976,7 @@ func TestSelectAddIntCheapSrc2(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			CheapRegisterSources: map[*ir.DefinitionChunk]struct{}{
@@ -1078,7 +1085,7 @@ func TestSelectAddIntPreferredSrc1(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			PreferredRegisterDestination: map[*ir.DefinitionChunk]*ir.DefinitionChunk{
@@ -1187,7 +1194,7 @@ func TestSelectAddIntPreferredSrc2(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{
 			PreferredRegisterDestination: map[*ir.DefinitionChunk]*ir.DefinitionChunk{
@@ -1296,7 +1303,7 @@ func TestSelectAddFloatNoHint(t *testing.T) {
 	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
-		InstructionSet,
+		testConfig,
 		dest,
 		architecture.SelectorHint{})
 

@@ -205,6 +205,7 @@ type commonBinaryOperationSelector struct {
 }
 
 func (selector commonBinaryOperationSelector) Select(
+	config architecture.Config,
 	def *ir.Definition,
 	binaryOp *ir.BinaryOperation,
 	hint architecture.SelectorHint,
@@ -427,6 +428,7 @@ type shiftSelector struct {
 }
 
 func (selector shiftSelector) Select(
+	config architecture.Config,
 	def *ir.Definition,
 	binaryOp *ir.BinaryOperation,
 	hint architecture.SelectorHint,
@@ -543,6 +545,7 @@ type divRemSelector struct {
 }
 
 func (selector divRemSelector) Select(
+	config architecture.Config,
 	def *ir.Definition,
 	binaryOp *ir.BinaryOperation,
 	hint architecture.SelectorHint,
