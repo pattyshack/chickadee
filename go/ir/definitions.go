@@ -1,5 +1,13 @@
 package ir
 
+const (
+	// All internal definition names are prefixed by "%"
+	PreviousFramePointer = "%previous-frame-pointer"
+	CurrentFramePointer  = "%current-frame-pointer"
+	ReturnAddress        = "%return-address"
+	ReturnValue          = "%return-value"
+)
+
 type FunctionDefinition struct {
 	Name string
 	Type *FunctionType
@@ -16,6 +24,23 @@ type FunctionDefinition struct {
 	// stack, calls the .init section function, calls the entry function, and
 	// finally exit.
 	IsEntryFunction bool
+
+	// Internal
+
+	// NOTE: The following definitions span the entire function life time.
+	// Function parameters are not tracked at function level since their
+	// lifespans could be shorter than the function.
+
+	CalleeSavedRegisters []*Definition
+
+	ReturnValue *Definition
+
+	ReturnAddress *Definition
+
+	// NOTE: PreviousFramePointer is always defined even if the call convention
+	// does not provide a value, in which case, the value is zero.
+	PreviousFramePointer *Definition
+	CurrentFramePointer  *Definition
 }
 
 // Global variable/constant definition.
@@ -72,7 +97,8 @@ type Definition struct {
 
 	// Internal
 
-	// Used for defining function parameters and non-local reference values.
+	// Used for defining function parameters, callee-saved registers,
+	// return value, and non-local reference values.
 	IsPseudoDefinition bool
 
 	Chunks []*DefinitionChunk

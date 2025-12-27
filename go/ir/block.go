@@ -22,7 +22,7 @@ type Block struct {
 
 	// internal
 
-	FuncDef *FunctionDefinition
+	Function *FunctionDefinition
 
 	Parents []*Block
 	// The jump child branch (if exist) is always before the fallthrough child
@@ -43,7 +43,6 @@ type Phi struct {
 type Instruction interface {
 	isInstruction()
 
-	ParentBlock() *Block
 	SetParentBlock(*Block)
 }
 
@@ -52,10 +51,6 @@ type instruction struct {
 }
 
 func (*instruction) isInstruction() {}
-
-func (inst *instruction) ParentBlock() *Block {
-	return inst.Block
-}
 
 func (inst *instruction) SetParentBlock(block *Block) {
 	inst.Block = block

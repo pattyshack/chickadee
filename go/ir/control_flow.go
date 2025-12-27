@@ -38,5 +38,5 @@ type Terminal struct {
 
 	Kind TerminalKind
 
-	RetValue *Value // return empty struct for void
+	ReturnValue Value // return empty struct for void
 }

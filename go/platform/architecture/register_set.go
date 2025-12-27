@@ -1,6 +1,7 @@
 package architecture
 
 type Register struct {
+	// NOTE: name must be '%'-prefixed
 	Name string
 
 	// Architecture specific instruction encoding. e.g., X.Reg on x64
@@ -14,6 +15,7 @@ type Register struct {
 	Index int
 }
 
+// NOTE: name must be '%'-prefixed
 func NewGeneralRegister(name string, encoding int) *Register {
 	return &Register{
 		Name:                   name,
@@ -22,6 +24,7 @@ func NewGeneralRegister(name string, encoding int) *Register {
 	}
 }
 
+// NOTE: name must be '%'-prefixed
 func NewFloatRegister(name string, encoding int) *Register {
 	return &Register{
 		Name:                 name,
@@ -75,4 +78,14 @@ func NewRegisterSet(registers ...*Register) RegisterSet {
 	}
 
 	return set
+}
+
+func (set RegisterSet) Get(name string) *Register {
+	for _, register := range set.Data {
+		if register.Name == name {
+			return register
+		}
+	}
+
+	panic("unknown register: " + name)
 }

@@ -107,7 +107,7 @@ const (
 type FuncCall struct {
 	operation
 
-	Kind FuncCallKind
-	Func Value
-	Args []Value
+	Kind      FuncCallKind
+	Function  Value
+	Arguments []Value
 }

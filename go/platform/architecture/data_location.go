@@ -7,7 +7,6 @@ import (
 // Stack space allocated for a data location.  Unlike data chunk / location,
 // the stack entry may be uninitialized / invalid.
 type StackEntry struct {
-	Name string
 	ir.Type
 
 	// The offset is relative to the top of the current stack frame

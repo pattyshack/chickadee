@@ -3,7 +3,7 @@ package architecture
 type Config struct {
 	Name string
 
-	RegisterSet
+	Registers RegisterSet
 
 	InstructionSet
 }

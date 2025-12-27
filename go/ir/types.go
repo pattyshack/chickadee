@@ -130,13 +130,9 @@ type FunctionType struct {
 	ParameterTypes []Type
 	ReturnType     Type // use empty struct for no return value
 
-	// TODO compute register constraints / stack layout
 	// NOTE: (internal use only) This is not part of the type signature.
-	//
-	// When the call stack layout is used by the caller, the layout offsets are
-	// relative to the stack pointer.  When the call stack layout is used by the
-	// callee, the layout offsets are relative to the return address (bottom of
-	// the stack frame).
+
+	CallConvention interface{} // cached architecture.CallConvention
 }
 
 func (*FunctionType) isTypeExpression() {}

@@ -1,6 +1,7 @@
 package amd64
 
 import (
+	"github.com/pattyshack/chickadee/amd64/instructions"
 	"github.com/pattyshack/chickadee/amd64/layout"
 	"github.com/pattyshack/chickadee/amd64/registers"
 	"github.com/pattyshack/chickadee/platform"
@@ -12,8 +13,9 @@ var (
 	Linux = platform.Config{
 		OperatingSystem: platform.Linux,
 		Architecture: architecture.Config{
-			Name:        "amd64",
-			RegisterSet: registers.Registers,
+			Name:           "amd64",
+			Registers:      registers.Registers,
+			InstructionSet: instructions.InstructionSet,
 		},
 		Layout: layout.LinuxLayout,
 		ExecutableFormat: executable.Config{

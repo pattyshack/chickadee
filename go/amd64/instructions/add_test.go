@@ -16,7 +16,7 @@ import (
 
 var (
 	testConfig = architecture.Config{
-		RegisterSet:    registers.Registers,
+		Registers:      registers.Registers,
 		InstructionSet: InstructionSet,
 	}
 )
