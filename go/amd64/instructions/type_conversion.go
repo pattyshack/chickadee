@@ -119,7 +119,7 @@ func convertSignedIntToFloat(
 		panic("invalid register")
 	}
 
-	srcSize := int(srcType.(ir.SignedIntType))
+	srcSize := srcType.(*ir.SignedIntType).ByteSize
 	if srcSize < 4 {
 		extendInt(builder, 4, src, srcType, src)
 	} else if srcSize > 4 {

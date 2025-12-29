@@ -20,7 +20,7 @@ func shl(
 	dest *architecture.Register,
 ) {
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 	default:
 		panic("should never happen")
@@ -49,7 +49,7 @@ func shlIntImmediate(
 	immediate interface{}, // uint8
 ) {
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 	default:
 		panic("should never happen")

@@ -28,7 +28,7 @@ func mul(
 	opCode := []byte{0x0F, 0xAF}
 
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 	case ir.FloatType:
 		isFloat = true
@@ -64,7 +64,7 @@ func mulIntImmediate(
 ) {
 	isUnsigned := false
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 		isUnsigned = true
 	default:

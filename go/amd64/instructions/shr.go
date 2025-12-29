@@ -24,7 +24,7 @@ func shr(
 ) {
 	opCodeExt := byte(7)
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 		opCodeExt = 5
 	}
@@ -57,7 +57,7 @@ func shrIntImmediate(
 ) {
 	ext := byte(7)
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 		ext = 5
 	}

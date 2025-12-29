@@ -35,10 +35,12 @@ func compare(
 ) {
 	isFloat := false
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 	case ir.FloatType:
 		isFloat = true
+	default:
+		panic("should never happen")
 	}
 
 	operandSize := compareType.Size()
@@ -95,7 +97,7 @@ func compareIntImmediate(
 ) {
 	isUnsigned := false
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 		isUnsigned = true
 	default:
@@ -188,12 +190,14 @@ func jlt(
 	src1 *architecture.Register,
 	src2 *architecture.Register,
 ) {
-	var opCode []byte
+	opCode := []byte{0x0F, 0x82}
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.UnsignedIntType:
+	case ir.FloatType:
+	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8C}
 	default:
-		opCode = []byte{0x0F, 0x82}
+		panic("should never happen")
 	}
 
 	compare(builder, compareType, src1, src2)
@@ -213,12 +217,14 @@ func jltIntImmediate(
 	src *architecture.Register,
 	immediate interface{}, // int* or uint*
 ) {
-	var opCode []byte
+	opCode := []byte{0x0F, 0x82}
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.UnsignedIntType:
+	case ir.FloatType:
+	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8C}
 	default:
-		opCode = []byte{0x0F, 0x82}
+		panic("should never happen")
 	}
 
 	compareIntImmediate(builder, compareType, src, immediate)
@@ -238,12 +244,14 @@ func jle(
 	src1 *architecture.Register,
 	src2 *architecture.Register,
 ) {
-	var opCode []byte
+	opCode := []byte{0x0F, 0x86}
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.UnsignedIntType:
+	case ir.FloatType:
+	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8E}
 	default:
-		opCode = []byte{0x0F, 0x86}
+		panic("should never happen")
 	}
 
 	compare(builder, compareType, src1, src2)
@@ -263,12 +271,14 @@ func jleIntImmediate(
 	src *architecture.Register,
 	immediate interface{}, // int* or uint*
 ) {
-	var opCode []byte
+	opCode := []byte{0x0F, 0x86}
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.UnsignedIntType:
+	case ir.FloatType:
+	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8E}
 	default:
-		opCode = []byte{0x0F, 0x86}
+		panic("should never happen")
 	}
 
 	compareIntImmediate(builder, compareType, src, immediate)
@@ -288,12 +298,14 @@ func jgt(
 	src1 *architecture.Register,
 	src2 *architecture.Register,
 ) {
-	var opCode []byte
+	opCode := []byte{0x0F, 0x87}
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.UnsignedIntType:
+	case ir.FloatType:
+	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8F}
 	default:
-		opCode = []byte{0x0F, 0x87}
+		panic("should never happen")
 	}
 
 	compare(builder, compareType, src1, src2)
@@ -313,12 +325,14 @@ func jgtIntImmediate(
 	src *architecture.Register,
 	immediate interface{}, // int* or uint*
 ) {
-	var opCode []byte
+	opCode := []byte{0x0F, 0x87}
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.UnsignedIntType:
+	case ir.FloatType:
+	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8F}
 	default:
-		opCode = []byte{0x0F, 0x87}
+		panic("should never happen")
 	}
 
 	compareIntImmediate(builder, compareType, src, immediate)
@@ -338,12 +352,14 @@ func jge(
 	src1 *architecture.Register,
 	src2 *architecture.Register,
 ) {
-	var opCode []byte
+	opCode := []byte{0x0F, 0x83}
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.UnsignedIntType:
+	case ir.FloatType:
+	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8D}
 	default:
-		opCode = []byte{0x0F, 0x83}
+		panic("should never happen")
 	}
 
 	compare(builder, compareType, src1, src2)
@@ -363,12 +379,14 @@ func jgeIntImmediate(
 	src *architecture.Register,
 	immediate interface{}, // int* or uint*
 ) {
-	var opCode []byte
+	opCode := []byte{0x0F, 0x83}
 	switch compareType.(type) {
-	case ir.SignedIntType:
+	case *ir.UnsignedIntType:
+	case ir.FloatType:
+	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8D}
 	default:
-		opCode = []byte{0x0F, 0x83}
+		panic("should never happen")
 	}
 
 	compareIntImmediate(builder, compareType, src, immediate)

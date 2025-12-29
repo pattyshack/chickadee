@@ -23,7 +23,7 @@ func negSignedInt(
 	simpleType ir.Type,
 	dest *architecture.Register,
 ) {
-	operandSize := int(simpleType.(ir.SignedIntType))
+	operandSize := simpleType.(*ir.SignedIntType).ByteSize
 
 	opCode := []byte{0xF7}
 	if operandSize == 1 {

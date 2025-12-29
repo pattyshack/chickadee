@@ -272,7 +272,7 @@ func extendInt(
 	extend := _extendUnsignedInt
 	switch srcType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 		extend = _extendSignedInt
 	default:
 		panic("should never happen")

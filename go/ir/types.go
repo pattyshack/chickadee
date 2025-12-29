@@ -56,32 +56,45 @@ var (
 	}
 )
 
-type SignedIntType int // in bytes
+type SignedIntType struct {
+	ByteSize int
+}
 
-func (SignedIntType) isTypeExpression() {}
+func (*SignedIntType) isTypeExpression() {}
 
-func (thisInt SignedIntType) Equals(other Type) bool {
-	otherInt, ok := other.(SignedIntType)
+func (thisInt *SignedIntType) Equals(other Type) bool {
+	otherInt, ok := other.(*SignedIntType)
 	if !ok {
 		return false
 	}
 
-	return thisInt == otherInt
+	return thisInt == otherInt // Same pointer
 }
 
-func (t SignedIntType) Alignment() int {
-	return int(t)
+func (t *SignedIntType) Alignment() int {
+	return t.ByteSize
 }
 
-func (t SignedIntType) Size() int {
-	return int(t)
+func (t *SignedIntType) Size() int {
+	return t.ByteSize
 }
 
-const (
-	Int8  = SignedIntType(1)
-	Int16 = SignedIntType(2)
-	Int32 = SignedIntType(4)
-	Int64 = SignedIntType(8)
+var (
+	Int8 = &SignedIntType{
+		ByteSize: 1,
+	}
+
+	Int16 = &SignedIntType{
+		ByteSize: 2,
+	}
+
+	Int32 = &SignedIntType{
+		ByteSize: 4,
+	}
+
+	Int64 = &SignedIntType{
+		ByteSize: 8,
+	}
 )
 
 type FloatType int // in bytes

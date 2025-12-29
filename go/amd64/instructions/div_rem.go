@@ -74,17 +74,16 @@ func divRemInt(
 		// div
 		newM(t.ByteSize, []byte{0xF7}, 6, divisor).encode(builder)
 
-	case ir.SignedIntType:
-		size := t
-		if size == 1 {
-			extendInt(builder, 4, registers.Rax, size, registers.Rax)
+	case *ir.SignedIntType:
+		if t.ByteSize == 1 {
+			extendInt(builder, 4, registers.Rax, t, registers.Rax)
 			if divisor != registers.Rax {
-				extendInt(builder, 4, divisor, size, divisor)
+				extendInt(builder, 4, divisor, t, divisor)
 			}
-			size = 4
+			t = ir.Int32
 		}
 
-		switch size {
+		switch t.ByteSize {
 		case 2:
 			builder.AppendBasicData(cwd)
 		case 4:
@@ -96,7 +95,7 @@ func divRemInt(
 		}
 
 		// idiv
-		newM(int(size), []byte{0xF7}, 7, divisor).encode(builder)
+		newM(t.ByteSize, []byte{0xF7}, 7, divisor).encode(builder)
 	default:
 		panic("should never happen")
 	}

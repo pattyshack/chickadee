@@ -28,7 +28,7 @@ func add(
 	isFloat := false
 	opCode := []byte{0x03}
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 	case ir.FloatType:
 		isFloat = true
@@ -65,7 +65,7 @@ func addIntImmediate(
 ) {
 	isUnsigned := false
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 		isUnsigned = true
 	default:

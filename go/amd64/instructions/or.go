@@ -21,7 +21,7 @@ func or(
 	src *architecture.Register,
 ) {
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 	default:
 		panic("should never happen")
@@ -53,7 +53,7 @@ func orIntImmediate(
 ) {
 	isUnsigned := false
 	switch simpleType.(type) {
-	case ir.SignedIntType:
+	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
 		isUnsigned = true
 	default:
