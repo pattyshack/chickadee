@@ -125,6 +125,19 @@ func (AddressType) Size() int {
 
 type CallConventionKind string
 
+const (
+	// Simplified System V ABI.
+	//
+	// On amd64:
+	// - This does not support SSEUP, X87, X87UP, COMPLEX_X87 parameter classes
+	// as defined in "3.2.3 Parameter Passing", i.e., this does not support
+	// legacy x86 values / basic value larger than 64 bits.
+	// - This assumes all parameters are "trivial for the purpose of calls",
+	// i.e., parameter are shallow copy-able, not C++ object with custom
+	// copy constructor.
+	SysVLiteCallConvention = CallConventionKind("SysVLite")
+)
+
 type FunctionType struct {
 	CallConventionKind
 	ParameterTypes []Type

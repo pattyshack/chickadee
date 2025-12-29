@@ -6,4 +6,6 @@ type Config struct {
 	Registers RegisterSet
 
 	InstructionSet
+
+	CallConventions
 }
