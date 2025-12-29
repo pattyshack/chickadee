@@ -21,13 +21,8 @@ type UnsignedIntType struct {
 
 func (*UnsignedIntType) isTypeExpression() {}
 
-func (thisInt *UnsignedIntType) Equals(other Type) bool {
-	otherInt, ok := other.(*UnsignedIntType)
-	if !ok {
-		return false
-	}
-
-	return thisInt == otherInt // Same pointer
+func (this *UnsignedIntType) Equals(other Type) bool {
+	return this == other // Same pointer
 }
 
 func (t *UnsignedIntType) Alignment() int {
@@ -62,13 +57,8 @@ type SignedIntType struct {
 
 func (*SignedIntType) isTypeExpression() {}
 
-func (thisInt *SignedIntType) Equals(other Type) bool {
-	otherInt, ok := other.(*SignedIntType)
-	if !ok {
-		return false
-	}
-
-	return thisInt == otherInt // Same pointer
+func (this *SignedIntType) Equals(other Type) bool {
+	return this == other // Same pointer
 }
 
 func (t *SignedIntType) Alignment() int {
@@ -97,30 +87,32 @@ var (
 	}
 )
 
-type FloatType int // in bytes
+type FloatType struct {
+	ByteSize int
+}
 
-func (FloatType) isTypeExpression() {}
+func (*FloatType) isTypeExpression() {}
 
-func (thisFloat FloatType) Equals(other Type) bool {
-	otherFloat, ok := other.(FloatType)
-	if !ok {
-		return false
+func (this *FloatType) Equals(other Type) bool {
+	return this == other // Same pointer
+}
+
+func (t *FloatType) Alignment() int {
+	return t.ByteSize
+}
+
+func (t *FloatType) Size() int {
+	return t.ByteSize
+}
+
+var (
+	Float32 = &FloatType{
+		ByteSize: 4,
 	}
 
-	return thisFloat == otherFloat
-}
-
-func (t FloatType) Alignment() int {
-	return int(t)
-}
-
-func (t FloatType) Size() int {
-	return int(t)
-}
-
-const (
-	Float32 = FloatType(4)
-	Float64 = FloatType(8)
+	Float64 = &FloatType{
+		ByteSize: 8,
+	}
 )
 
 // NOTE: Unlike c pointer, int8 address type is not the same as int8 array

@@ -81,7 +81,7 @@ func convertFloatToInt(
 
 	spec := _newRMI(
 		true, // isFloat
-		int(srcType.(ir.FloatType)),
+		srcType.(*ir.FloatType).ByteSize,
 		[]byte{0x0F, 0x2D},
 		dest,
 		src,
@@ -127,7 +127,7 @@ func convertSignedIntToFloat(
 
 	spec := _newRMI(
 		true, // isFloat,
-		int(destType.(ir.FloatType)),
+		destType.(*ir.FloatType).ByteSize,
 		[]byte{0x0F, 0x2A},
 		dest,
 		src,
@@ -180,7 +180,7 @@ func convertSmallUintToFloat(
 
 	spec := _newRMI(
 		true, // isFloat
-		int(destType.(ir.FloatType)),
+		destType.(*ir.FloatType).ByteSize,
 		[]byte{0x0F, 0x2A},
 		dest,
 		src,
@@ -239,7 +239,7 @@ func convertUint64ToFloat(
 		panic("invalid register")
 	}
 
-	operandSize := int(destType.(ir.FloatType))
+	operandSize := destType.(*ir.FloatType).ByteSize
 	nonNegative := "non negative"
 	end := "end"
 

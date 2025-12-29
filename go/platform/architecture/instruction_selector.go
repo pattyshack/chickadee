@@ -197,7 +197,7 @@ func selectJeq(
 		return config.JeqInt.Select(config, instruction, hint)
 	case *ir.UnsignedIntType:
 		return config.JeqUint.Select(config, instruction, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.JeqFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jeq type: %v", instruction.Src1.Type()))
@@ -214,7 +214,7 @@ func selectJne(
 		return config.JneInt.Select(config, instruction, hint)
 	case *ir.UnsignedIntType:
 		return config.JneUint.Select(config, instruction, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.JneFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jne type: %v", instruction.Src1.Type()))
@@ -231,7 +231,7 @@ func selectJlt(
 		return config.JltInt.Select(config, instruction, hint)
 	case *ir.UnsignedIntType:
 		return config.JltUint.Select(config, instruction, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.JltFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jlt type: %v", instruction.Src1.Type()))
@@ -248,7 +248,7 @@ func selectJle(
 		return config.JleInt.Select(config, instruction, hint)
 	case *ir.UnsignedIntType:
 		return config.JleUint.Select(config, instruction, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.JleFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jle type: %v", instruction.Src1.Type()))
@@ -265,7 +265,7 @@ func selectJgt(
 		return config.JgtInt.Select(config, instruction, hint)
 	case *ir.UnsignedIntType:
 		return config.JgtUint.Select(config, instruction, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.JgtFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jgt type: %v", instruction.Src1.Type()))
@@ -282,7 +282,7 @@ func selectJge(
 		return config.JgeInt.Select(config, instruction, hint)
 	case *ir.UnsignedIntType:
 		return config.JgeUint.Select(config, instruction, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.JgeFloat.Select(config, instruction, hint)
 	default:
 		panic(fmt.Sprintf("supported jge type: %v", instruction.Src1.Type()))
@@ -337,7 +337,7 @@ func selectNeg(
 	switch instruction.Type.(type) {
 	case *ir.SignedIntType:
 		return config.NegInt.Select(config, instruction, operation, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.NegFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported neg type: %v", instruction.Type))
@@ -371,7 +371,7 @@ func selectToInt(
 		return config.UintToInt.Select(config, instruction, operation, hint)
 	case *ir.SignedIntType:
 		return config.IntToInt.Select(config, instruction, operation, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.FloatToInt.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported toInt type: %v", instruction.Type))
@@ -389,7 +389,7 @@ func selectToUint(
 		return config.UintToUint.Select(config, instruction, operation, hint)
 	case *ir.SignedIntType:
 		return config.IntToUint.Select(config, instruction, operation, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.FloatToUint.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported toUint type: %v", instruction.Type))
@@ -407,7 +407,7 @@ func selectToFloat(
 		return config.UintToFloat.Select(config, instruction, operation, hint)
 	case *ir.SignedIntType:
 		return config.IntToFloat.Select(config, instruction, operation, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.FloatToFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported toFloat type: %v", instruction.Type))
@@ -457,7 +457,7 @@ func selectAdd(
 		return config.AddUint.Select(config, instruction, operation, hint)
 	case *ir.SignedIntType:
 		return config.AddInt.Select(config, instruction, operation, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.AddFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported add type: %v", instruction.Type))
@@ -475,7 +475,7 @@ func selectMul(
 		return config.MulUint.Select(config, instruction, operation, hint)
 	case *ir.SignedIntType:
 		return config.MulInt.Select(config, instruction, operation, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.MulFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported mul type: %v", instruction.Type))
@@ -493,7 +493,7 @@ func selectSub(
 		return config.SubUint.Select(config, instruction, operation, hint)
 	case *ir.SignedIntType:
 		return config.SubInt.Select(config, instruction, operation, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.SubFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported sub type: %v", instruction.Type))
@@ -511,7 +511,7 @@ func selectDiv(
 		return config.DivUint.Select(config, instruction, operation, hint)
 	case *ir.SignedIntType:
 		return config.DivInt.Select(config, instruction, operation, hint)
-	case ir.FloatType:
+	case *ir.FloatType:
 		return config.DivFloat.Select(config, instruction, operation, hint)
 	default:
 		panic(fmt.Sprintf("supported div type: %v", instruction.Type))

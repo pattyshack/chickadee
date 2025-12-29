@@ -113,6 +113,6 @@ func divFloat(
 	dest *architecture.Register,
 	src *architecture.Register,
 ) {
-	operandSize := int(simpleType.(ir.FloatType))
+	operandSize := simpleType.(*ir.FloatType).ByteSize
 	newRM(true, operandSize, []byte{0x0F, 0x5E}, dest, src).encode(builder)
 }

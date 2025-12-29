@@ -37,7 +37,7 @@ func compare(
 	switch compareType.(type) {
 	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 		isFloat = true
 	default:
 		panic("should never happen")
@@ -193,7 +193,7 @@ func jlt(
 	opCode := []byte{0x0F, 0x82}
 	switch compareType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8C}
 	default:
@@ -220,7 +220,7 @@ func jltIntImmediate(
 	opCode := []byte{0x0F, 0x82}
 	switch compareType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8C}
 	default:
@@ -247,7 +247,7 @@ func jle(
 	opCode := []byte{0x0F, 0x86}
 	switch compareType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8E}
 	default:
@@ -274,7 +274,7 @@ func jleIntImmediate(
 	opCode := []byte{0x0F, 0x86}
 	switch compareType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8E}
 	default:
@@ -301,7 +301,7 @@ func jgt(
 	opCode := []byte{0x0F, 0x87}
 	switch compareType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8F}
 	default:
@@ -328,7 +328,7 @@ func jgtIntImmediate(
 	opCode := []byte{0x0F, 0x87}
 	switch compareType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8F}
 	default:
@@ -355,7 +355,7 @@ func jge(
 	opCode := []byte{0x0F, 0x83}
 	switch compareType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8D}
 	default:
@@ -382,7 +382,7 @@ func jgeIntImmediate(
 	opCode := []byte{0x0F, 0x83}
 	switch compareType.(type) {
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 	case *ir.SignedIntType:
 		opCode = []byte{0x0F, 0x8D}
 	default:

@@ -30,7 +30,7 @@ func add(
 	switch simpleType.(type) {
 	case *ir.SignedIntType:
 	case *ir.UnsignedIntType:
-	case ir.FloatType:
+	case *ir.FloatType:
 		isFloat = true
 		opCode = []byte{0x0F, 0x58}
 	default:
