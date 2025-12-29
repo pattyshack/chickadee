@@ -19,16 +19,14 @@ func shl(
 	simpleType ir.Type,
 	dest *architecture.Register,
 ) {
-	operandSize := 0
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	if operandSize != 8 {
 		operandSize = 4
 	}
@@ -50,16 +48,14 @@ func shlIntImmediate(
 	dest *architecture.Register,
 	immediate interface{}, // uint8
 ) {
-	operandSize := 0
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	if operandSize != 8 {
 		operandSize = 4
 	}

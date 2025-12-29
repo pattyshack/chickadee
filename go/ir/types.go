@@ -15,32 +15,45 @@ type Type interface {
 	Size() int
 }
 
-type UnsignedIntType int // in bytes
+type UnsignedIntType struct {
+	ByteSize int
+}
 
-func (UnsignedIntType) isTypeExpression() {}
+func (*UnsignedIntType) isTypeExpression() {}
 
-func (thisInt UnsignedIntType) Equals(other Type) bool {
-	otherInt, ok := other.(UnsignedIntType)
+func (thisInt *UnsignedIntType) Equals(other Type) bool {
+	otherInt, ok := other.(*UnsignedIntType)
 	if !ok {
 		return false
 	}
 
-	return thisInt == otherInt
+	return thisInt == otherInt // Same pointer
 }
 
-func (t UnsignedIntType) Alignment() int {
-	return int(t)
+func (t *UnsignedIntType) Alignment() int {
+	return t.ByteSize
 }
 
-func (t UnsignedIntType) Size() int {
-	return int(t)
+func (t *UnsignedIntType) Size() int {
+	return t.ByteSize
 }
 
-const (
-	Uint8  = UnsignedIntType(1)
-	Uint16 = UnsignedIntType(2)
-	Uint32 = UnsignedIntType(4)
-	Uint64 = UnsignedIntType(8)
+var (
+	Uint8 = &UnsignedIntType{
+		ByteSize: 1,
+	}
+
+	Uint16 = &UnsignedIntType{
+		ByteSize: 2,
+	}
+
+	Uint32 = &UnsignedIntType{
+		ByteSize: 4,
+	}
+
+	Uint64 = &UnsignedIntType{
+		ByteSize: 8,
+	}
 )
 
 type SignedIntType int // in bytes

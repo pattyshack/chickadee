@@ -195,7 +195,7 @@ func selectJeq(
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
 		return config.JeqInt.Select(config, instruction, hint)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.JeqUint.Select(config, instruction, hint)
 	case ir.FloatType:
 		return config.JeqFloat.Select(config, instruction, hint)
@@ -212,7 +212,7 @@ func selectJne(
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
 		return config.JneInt.Select(config, instruction, hint)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.JneUint.Select(config, instruction, hint)
 	case ir.FloatType:
 		return config.JneFloat.Select(config, instruction, hint)
@@ -229,7 +229,7 @@ func selectJlt(
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
 		return config.JltInt.Select(config, instruction, hint)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.JltUint.Select(config, instruction, hint)
 	case ir.FloatType:
 		return config.JltFloat.Select(config, instruction, hint)
@@ -246,7 +246,7 @@ func selectJle(
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
 		return config.JleInt.Select(config, instruction, hint)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.JleUint.Select(config, instruction, hint)
 	case ir.FloatType:
 		return config.JleFloat.Select(config, instruction, hint)
@@ -263,7 +263,7 @@ func selectJgt(
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
 		return config.JgtInt.Select(config, instruction, hint)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.JgtUint.Select(config, instruction, hint)
 	case ir.FloatType:
 		return config.JgtFloat.Select(config, instruction, hint)
@@ -280,7 +280,7 @@ func selectJge(
 	switch instruction.Src1.Type().(type) {
 	case ir.SignedIntType:
 		return config.JgeInt.Select(config, instruction, hint)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.JgeUint.Select(config, instruction, hint)
 	case ir.FloatType:
 		return config.JgeFloat.Select(config, instruction, hint)
@@ -351,7 +351,7 @@ func selectNot(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.NotUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.NotInt.Select(config, instruction, operation, hint)
@@ -367,7 +367,7 @@ func selectToInt(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation.Src.Def().Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.UintToInt.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.IntToInt.Select(config, instruction, operation, hint)
@@ -385,7 +385,7 @@ func selectToUint(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation.Src.Def().Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.UintToUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.IntToUint.Select(config, instruction, operation, hint)
@@ -403,7 +403,7 @@ func selectToFloat(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch operation.Src.Def().Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.UintToFloat.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.IntToFloat.Select(config, instruction, operation, hint)
@@ -453,7 +453,7 @@ func selectAdd(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.AddUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.AddInt.Select(config, instruction, operation, hint)
@@ -471,7 +471,7 @@ func selectMul(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.MulUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.MulInt.Select(config, instruction, operation, hint)
@@ -489,7 +489,7 @@ func selectSub(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.SubUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.SubInt.Select(config, instruction, operation, hint)
@@ -507,7 +507,7 @@ func selectDiv(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.DivUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.DivInt.Select(config, instruction, operation, hint)
@@ -525,7 +525,7 @@ func selectRem(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.RemUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.RemInt.Select(config, instruction, operation, hint)
@@ -541,7 +541,7 @@ func selectShl(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.ShlUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.ShlInt.Select(config, instruction, operation, hint)
@@ -557,7 +557,7 @@ func selectShr(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.ShrUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.ShrInt.Select(config, instruction, operation, hint)
@@ -573,7 +573,7 @@ func selectAnd(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.AndUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.AndInt.Select(config, instruction, operation, hint)
@@ -589,7 +589,7 @@ func selectOr(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.OrUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.OrInt.Select(config, instruction, operation, hint)
@@ -605,7 +605,7 @@ func selectXor(
 	hint SelectorHint,
 ) MachineInstruction {
 	switch instruction.Type.(type) {
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		return config.XorUint.Select(config, instruction, operation, hint)
 	case ir.SignedIntType:
 		return config.XorInt.Select(config, instruction, operation, hint)

@@ -270,17 +270,15 @@ func extendInt(
 	src *architecture.Register,
 ) {
 	extend := _extendUnsignedInt
-	srcSize := 0
-	switch size := srcType.(type) {
-	case ir.UnsignedIntType:
-		srcSize = int(size)
+	switch srcType.(type) {
+	case *ir.UnsignedIntType:
 	case ir.SignedIntType:
 		extend = _extendSignedInt
-		srcSize = int(size)
 	default:
 		panic("should never happen")
 	}
 
+	srcSize := srcType.Size()
 	if srcSize >= destSize {
 		panic("should never happen")
 	}

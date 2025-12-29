@@ -25,22 +25,19 @@ func mul(
 	src *architecture.Register,
 ) {
 	isFloat := false
-	operandSize := 0
 	opCode := []byte{0x0F, 0xAF}
 
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 	case ir.FloatType:
 		isFloat = true
-		operandSize = int(size)
 		opCode = []byte{0x0F, 0x59}
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	if !isFloat && operandSize != 8 {
 		operandSize = 4
 	}
@@ -66,17 +63,15 @@ func mulIntImmediate(
 	immediate interface{},
 ) {
 	isUnsigned := false
-	operandSize := 0
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		isUnsigned = true
-		operandSize = int(size)
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	opCode := []byte{0x69}
 	if operandSize == 1 {
 		opCode = []byte{0x6B}

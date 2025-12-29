@@ -167,7 +167,7 @@ func convertSmallUintToFloat(
 
 	extendedSize := 4
 	requireRexWBit := false
-	switch int(srcType.(ir.UnsignedIntType)) {
+	switch srcType.(*ir.UnsignedIntType).ByteSize {
 	case 1, 2: // use 32-bit operand variant
 	case 4:
 		extendedSize = 8

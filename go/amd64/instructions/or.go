@@ -20,16 +20,14 @@ func or(
 	dest *architecture.Register,
 	src *architecture.Register,
 ) {
-	operandSize := 0
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	if operandSize != 8 {
 		operandSize = 4
 	}
@@ -54,17 +52,15 @@ func orIntImmediate(
 	immediate interface{}, // int64 or uint64
 ) {
 	isUnsigned := false
-	operandSize := 0
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		isUnsigned = true
-		operandSize = int(size)
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	opCode := []byte{0x81}
 	if operandSize == 1 {
 		opCode = []byte{0x80}

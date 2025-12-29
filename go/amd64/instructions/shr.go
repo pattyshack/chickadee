@@ -22,16 +22,14 @@ func shr(
 	simpleType ir.Type,
 	dest *architecture.Register,
 ) {
-	operandSize := 0
 	opCodeExt := byte(7)
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 		opCodeExt = 5
 	}
 
+	operandSize := simpleType.Size()
 	opCode := byte(0xD3)
 	if operandSize == 1 {
 		opCode = 0xD2
@@ -57,16 +55,14 @@ func shrIntImmediate(
 	dest *architecture.Register,
 	immediate interface{}, // uint8
 ) {
-	operandSize := 0
 	ext := byte(7)
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 		ext = 5
 	}
 
+	operandSize := simpleType.Size()
 	opCode := byte(0xC1)
 	if operandSize == 1 {
 		opCode = 0xC0

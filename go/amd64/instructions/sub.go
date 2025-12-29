@@ -22,21 +22,18 @@ func sub(
 	src *architecture.Register,
 ) {
 	isFloat := false
-	operandSize := 0
 	opCode := []byte{0x2B}
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 	case ir.FloatType:
 		isFloat = true
-		operandSize = int(size)
 		opCode = []byte{0x0F, 0x5C}
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	if !isFloat && operandSize == 1 {
 		opCode = []byte{0x2A}
 	}
@@ -61,17 +58,15 @@ func subIntImmediate(
 	immediate interface{}, // int64 or uint64
 ) {
 	isUnsigned := false
-	operandSize := 0
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		isUnsigned = true
-		operandSize = int(size)
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	opCode := []byte{0x81}
 	if operandSize == 1 {
 		opCode = []byte{0x80}

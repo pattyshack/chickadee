@@ -33,18 +33,15 @@ func compare(
 	src1 *architecture.Register,
 	src2 *architecture.Register,
 ) {
-	operandSize := 0
 	isFloat := false
-	switch size := compareType.(type) {
+	switch compareType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 	case ir.FloatType:
 		isFloat = true
-		operandSize = int(size)
 	}
 
+	operandSize := compareType.Size()
 	if !isFloat {
 		opCode := []byte{0x3B}
 		if operandSize == 1 {
@@ -97,17 +94,15 @@ func compareIntImmediate(
 	immediate interface{}, // int* or uint*
 ) {
 	isUnsigned := false
-	operandSize := 0
-	switch size := compareType.(type) {
+	switch compareType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		isUnsigned = true
-		operandSize = int(size)
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := compareType.Size()
 	opCode := []byte{0x81}
 	if operandSize == 1 {
 		opCode = []byte{0x80}

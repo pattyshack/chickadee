@@ -26,21 +26,18 @@ func add(
 	src *architecture.Register,
 ) {
 	isFloat := false
-	operandSize := 0
 	opCode := []byte{0x03}
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
-		operandSize = int(size)
+	case *ir.UnsignedIntType:
 	case ir.FloatType:
 		isFloat = true
-		operandSize = int(size)
 		opCode = []byte{0x0F, 0x58}
 	default:
 		panic("should never happen")
 	}
 
+	operandSize := simpleType.Size()
 	if !isFloat && operandSize < 4 {
 		operandSize = 4
 	}
@@ -67,18 +64,16 @@ func addIntImmediate(
 	immediate interface{}, // either int64 or uint64
 ) {
 	isUnsigned := false
-	operandSize := 0
-	switch size := simpleType.(type) {
+	switch simpleType.(type) {
 	case ir.SignedIntType:
-		operandSize = int(size)
-	case ir.UnsignedIntType:
+	case *ir.UnsignedIntType:
 		isUnsigned = true
-		operandSize = int(size)
 	default:
 		panic("should never happen")
 	}
 
 	opCode := []byte{0x81}
+	operandSize := simpleType.Size()
 	if operandSize == 1 {
 		opCode = []byte{0x80}
 	}
