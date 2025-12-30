@@ -243,14 +243,14 @@ func (selector commonBinaryOperationSelector) maybeNewRMIOperation(
 		return nil
 	}
 
-	srcChunk := src.Def().Chunks[0]
+	srcChunk := src.Def().Chunks()[0]
 	_, reuseRegister := hint.CheapRegisterSources[srcChunk]
 
 	if !reuseRegister {
 		reuseRegister = hint.NumFreeGeneralRegisters == 0
 	}
 
-	destChunk := def.Chunks[0]
+	destChunk := def.Chunks()[0]
 	if !reuseRegister {
 		preferred := hint.PreferredRegisterDestination[destChunk]
 		reuseRegister = preferred == srcChunk
@@ -337,13 +337,13 @@ func (selector commonBinaryOperationSelector) maybeNewBinaryMIOperation(
 			RegisterSources: []architecture.RegisterMapping{
 				{
 					RegisterConstraint: register,
-					DefinitionChunk:    src.Def().Chunks[0],
+					DefinitionChunk:    src.Def().Chunks()[0],
 				},
 			},
 			RegisterDestinations: []architecture.RegisterMapping{
 				{
 					RegisterConstraint: register,
-					DefinitionChunk:    def.Chunks[0],
+					DefinitionChunk:    def.Chunks()[0],
 				},
 			},
 		},
@@ -366,17 +366,18 @@ func (selector commonBinaryOperationSelector) newBinaryRMOperation(
 		AnyFloat:   selector.isFloat,
 	}
 
+	destChunk := def.Chunks()[0]
 	constraints := architecture.InstructionConstraints{
 		RegisterDestinations: []architecture.RegisterMapping{
 			{
 				RegisterConstraint: clobberedRegister,
-				DefinitionChunk:    def.Chunks[0],
+				DefinitionChunk:    destChunk,
 			},
 		},
 	}
 
-	src1Chunk := binaryOp.Src1.Def().Chunks[0]
-	src2Chunk := binaryOp.Src2.Def().Chunks[0]
+	src1Chunk := binaryOp.Src1.Def().Chunks()[0]
+	src2Chunk := binaryOp.Src2.Def().Chunks()[0]
 	if src1Chunk == src2Chunk {
 		constraints.RegisterSources = []architecture.RegisterMapping{
 			{
@@ -392,7 +393,7 @@ func (selector commonBinaryOperationSelector) newBinaryRMOperation(
 			_, src1IsCheap := hint.CheapRegisterSources[src1Chunk]
 			_, src2IsCheap := hint.CheapRegisterSources[src2Chunk]
 			if src1IsCheap == src2IsCheap {
-				preferred := hint.PreferredRegisterDestination[def.Chunks[0]]
+				preferred := hint.PreferredRegisterDestination[destChunk]
 				if src2Chunk == preferred {
 					clobberedSrc = src2Chunk
 					nonClobberedSrc = src1Chunk
@@ -465,13 +466,13 @@ func (selector shiftSelector) maybeNewBinaryMI8Operation(
 			RegisterSources: []architecture.RegisterMapping{
 				{
 					RegisterConstraint: register,
-					DefinitionChunk:    src.Def().Chunks[0],
+					DefinitionChunk:    src.Def().Chunks()[0],
 				},
 			},
 			RegisterDestinations: []architecture.RegisterMapping{
 				{
 					RegisterConstraint: register,
-					DefinitionChunk:    def.Chunks[0],
+					DefinitionChunk:    def.Chunks()[0],
 				},
 			},
 		},
@@ -485,8 +486,9 @@ func (selector shiftSelector) newBinaryMCOperation(
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
 	constraints := architecture.InstructionConstraints{}
-	src1Chunk := binaryOp.Src1.Def().Chunks[0]
-	src2Chunk := binaryOp.Src2.Def().Chunks[0]
+	src1Chunk := binaryOp.Src1.Def().Chunks()[0]
+	src2Chunk := binaryOp.Src2.Def().Chunks()[0]
+	destChunk := def.Chunks()[0]
 	if src1Chunk == src2Chunk {
 		register := &architecture.RegisterConstraint{
 			Clobbered: true,
@@ -502,7 +504,7 @@ func (selector shiftSelector) newBinaryMCOperation(
 		constraints.RegisterDestinations = []architecture.RegisterMapping{
 			{
 				RegisterConstraint: register,
-				DefinitionChunk:    def.Chunks[0],
+				DefinitionChunk:    destChunk,
 			},
 		}
 	} else {
@@ -528,7 +530,7 @@ func (selector shiftSelector) newBinaryMCOperation(
 		constraints.RegisterDestinations = []architecture.RegisterMapping{
 			{
 				RegisterConstraint: dest,
-				DefinitionChunk:    def.Chunks[0],
+				DefinitionChunk:    destChunk,
 			},
 		}
 	}
@@ -564,7 +566,7 @@ func (selector divRemSelector) Select(
 		dest = rdx
 	}
 
-	src1Chunk := binaryOp.Src1.Def().Chunks[0]
+	src1Chunk := binaryOp.Src1.Def().Chunks()[0]
 	constraints := architecture.InstructionConstraints{
 		RegisterSources: []architecture.RegisterMapping{
 			{ // scratch space for dividend upper bytes
@@ -579,12 +581,12 @@ func (selector divRemSelector) Select(
 		RegisterDestinations: []architecture.RegisterMapping{
 			{
 				RegisterConstraint: dest,
-				DefinitionChunk:    def.Chunks[0],
+				DefinitionChunk:    def.Chunks()[0],
 			},
 		},
 	}
 
-	src2Chunk := binaryOp.Src2.Def().Chunks[0]
+	src2Chunk := binaryOp.Src2.Def().Chunks()[0]
 	if src1Chunk != src2Chunk {
 		constraints.RegisterSources = append(
 			constraints.RegisterSources,

@@ -190,24 +190,19 @@ func TestShrUint64Immediate(t *testing.T) {
 
 func TestSelectShrIntImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Int32,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
 
 	imm := ir.NewBasicImmediate(uint8(4))
-	immChunk := &ir.DefinitionChunk{}
 	immDef := &ir.Definition{
-		Name:   "imm",
-		Chunks: []*ir.DefinitionChunk{immChunk},
+		Name: "imm",
+		Type: ir.Int32,
 	}
-	immChunk.Definition = immDef
 	imm.(*ir.Immediate).PseudoDefinition = immDef
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int32,
 		Operation: &ir.BinaryOperation{
@@ -215,9 +210,7 @@ func TestSelectShrIntImmediate(t *testing.T) {
 			Src1: src,
 			Src2: imm,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -247,24 +240,19 @@ func TestSelectShrIntImmediate(t *testing.T) {
 
 func TestSelectShrInt(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Int16,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Int16,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int16,
 		Operation: &ir.BinaryOperation{
@@ -272,9 +260,7 @@ func TestSelectShrInt(t *testing.T) {
 			Src1: src1,
 			Src2: src2,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -304,24 +290,19 @@ func TestSelectShrInt(t *testing.T) {
 
 func TestSelectShrUintImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Uint32,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
 
 	imm := ir.NewBasicImmediate(uint8(4))
-	immChunk := &ir.DefinitionChunk{}
 	immDef := &ir.Definition{
-		Name:   "imm",
-		Chunks: []*ir.DefinitionChunk{immChunk},
+		Name: "imm",
+		Type: ir.Uint32,
 	}
-	immChunk.Definition = immDef
 	imm.(*ir.Immediate).PseudoDefinition = immDef
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Uint32,
 		Operation: &ir.BinaryOperation{
@@ -329,9 +310,7 @@ func TestSelectShrUintImmediate(t *testing.T) {
 			Src1: src,
 			Src2: imm,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -361,24 +340,19 @@ func TestSelectShrUintImmediate(t *testing.T) {
 
 func TestSelectShrUint(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Uint16,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Uint16,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Uint16,
 		Operation: &ir.BinaryOperation{
@@ -386,9 +360,7 @@ func TestSelectShrUint(t *testing.T) {
 			Src1: src1,
 			Src2: src2,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
 
 	instruction := architecture.SelectInstruction(
 		testConfig,

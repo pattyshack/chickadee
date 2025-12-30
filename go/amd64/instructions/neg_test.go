@@ -90,24 +90,21 @@ func TestNegFloat64(t *testing.T) {
 
 func TestSelectNegInt(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Int16,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int16,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.Neg,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -167,24 +164,21 @@ func TestSelectNegInt(t *testing.T) {
 
 func TestSelectNegFloat32(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Float32,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Float32,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.Neg,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -247,24 +241,21 @@ func TestSelectNegFloat32(t *testing.T) {
 
 func TestSelectNegFloat64(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Float64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Float64,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.Neg,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,

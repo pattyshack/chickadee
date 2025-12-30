@@ -102,24 +102,21 @@ func TestNotUint64(t *testing.T) {
 
 func TestSelectNotInt(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Int32,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int32,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.Not,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -179,24 +176,21 @@ func TestSelectNotInt(t *testing.T) {
 
 func TestSelectNotUint(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Uint16,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Uint16,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.Not,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,

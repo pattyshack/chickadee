@@ -170,7 +170,7 @@ func (selector conditionalJumpSelector) maybeNewImmediateJump(
 						AnyGeneral: !selector.isFloat,
 						AnyFloat:   selector.isFloat,
 					},
-					DefinitionChunk: src.Def().Chunks[0],
+					DefinitionChunk: src.Def().Chunks()[0],
 				},
 			},
 		},
@@ -189,7 +189,7 @@ func (selector conditionalJumpSelector) newJump(
 				AnyGeneral: !selector.isFloat,
 				AnyFloat:   selector.isFloat,
 			},
-			DefinitionChunk: jump.Src1.Def().Chunks[0],
+			DefinitionChunk: jump.Src1.Def().Chunks()[0],
 		},
 	}
 
@@ -202,7 +202,7 @@ func (selector conditionalJumpSelector) newJump(
 					AnyGeneral: !selector.isFloat,
 					AnyFloat:   selector.isFloat,
 				},
-				DefinitionChunk: jump.Src2.Def().Chunks[0],
+				DefinitionChunk: jump.Src2.Def().Chunks()[0],
 			})
 	}
 

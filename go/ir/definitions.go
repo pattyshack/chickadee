@@ -101,9 +101,27 @@ type Definition struct {
 	// return value, and non-local reference values.
 	IsPseudoDefinition bool
 
-	Chunks []*DefinitionChunk
+	chunks []*DefinitionChunk
 
 	DefUse map[*LocalReference]struct{}
+}
+
+func (def *Definition) Chunks() []*DefinitionChunk {
+	if def.chunks != nil {
+		return def.chunks
+	}
+
+	typeChunks := def.Type.Chunks()
+	chunks := make([]*DefinitionChunk, len(typeChunks))
+	for idx, typeChunk := range typeChunks {
+		chunks[idx] = &DefinitionChunk{
+			Definition: def,
+			TypeChunk:  typeChunk,
+		}
+	}
+
+	def.chunks = chunks
+	return def.chunks
 }
 
 // For internal use only.
@@ -114,10 +132,5 @@ type Definition struct {
 type DefinitionChunk struct {
 	*Definition
 
-	// The offset is relative to the beginning of the definition's value.
-	Offset int
-
-	// Number of valid bytes in this chunk (e.g., size could be smaller than
-	// the register size)
-	Size int
+	*TypeChunk
 }

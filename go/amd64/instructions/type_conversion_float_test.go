@@ -388,25 +388,21 @@ func TestFloat64ToUint64(t *testing.T) {
 
 func TestSelectFloatToInt(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Float32,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Float32,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int32,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.ToInt32,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -481,25 +477,21 @@ func TestSelectFloatToInt(t *testing.T) {
 
 func TestSelectFloatToUint(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Float32,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Float32,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Uint32,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.ToUint32,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -574,25 +566,21 @@ func TestSelectFloatToUint(t *testing.T) {
 
 func TestSelectFloatToFloat(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Float32,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Float32,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Float64,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.ToFloat64,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -669,25 +657,21 @@ func TestSelectFloatToFloat(t *testing.T) {
 
 func TestSelectFloatToFloatNoFreeRegister(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Float32,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Float32,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Float64,
 		Operation: &ir.UnaryOperation{
 			Kind: ir.ToFloat64,
 			Src:  src,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,

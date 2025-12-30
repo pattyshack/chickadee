@@ -87,8 +87,8 @@ func (selector conversionSelector) Select(
 	unaryOp *ir.UnaryOperation,
 	hint architecture.SelectorHint,
 ) architecture.MachineInstruction {
-	destChunk := def.Chunks[0]
-	srcChunk := unaryOp.Src.Def().Chunks[0]
+	destChunk := def.Chunks()[0]
+	srcChunk := unaryOp.Src.Def().Chunks()[0]
 
 	reuseRegister := false
 	if selector.srcIsFloat == selector.destIsFloat {
@@ -174,8 +174,8 @@ func (selector uintToFloatSelector) Select(
 		return selector.smallUint.Select(config, def, unaryOp, hint)
 	}
 
-	destChunk := def.Chunks[0]
-	srcChunk := unaryOp.Src.Def().Chunks[0]
+	destChunk := def.Chunks()[0]
+	srcChunk := unaryOp.Src.Def().Chunks()[0]
 	return uint64ToFloatOperation{
 		Definition: def,
 		InstructionConstraints: architecture.InstructionConstraints{
@@ -227,8 +227,8 @@ func (selector unaryMSelector) Select(
 		AnyFloat:   false,
 	}
 
-	destChunk := def.Chunks[0]
-	srcChunk := unaryOp.Src.Def().Chunks[0]
+	destChunk := def.Chunks()[0]
+	srcChunk := unaryOp.Src.Def().Chunks()[0]
 	return mOperation{
 		Definition: def,
 		InstructionConstraints: architecture.InstructionConstraints{
@@ -269,8 +269,8 @@ func (selector negFloatSelector) Select(
 		AnyFloat:   false,
 	}
 
-	destChunk := def.Chunks[0]
-	srcChunk := unaryOp.Src.Def().Chunks[0]
+	destChunk := def.Chunks()[0]
+	srcChunk := unaryOp.Src.Def().Chunks()[0]
 	return binaryRMOperation{
 		Definition: def,
 		InstructionConstraints: architecture.InstructionConstraints{

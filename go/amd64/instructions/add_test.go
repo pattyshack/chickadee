@@ -255,13 +255,12 @@ func TestAddUint64Immediate(t *testing.T) {
 
 func TestSelectAddIntImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Int64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	for _, immValue := range []int64{
 		0x12345678,
@@ -269,12 +268,10 @@ func TestSelectAddIntImmediate(t *testing.T) {
 		math.MinInt32,
 	} {
 		imm := ir.NewBasicImmediate(immValue)
-		immChunk := &ir.DefinitionChunk{}
 		immDef := &ir.Definition{
-			Name:   "imm",
-			Chunks: []*ir.DefinitionChunk{immChunk},
+			Name: "imm",
+			Type: ir.Int64,
 		}
-		immChunk.Definition = immDef
 		imm.(*ir.Immediate).PseudoDefinition = immDef
 
 		immBytes := make([]byte, 8)
@@ -282,12 +279,10 @@ func TestSelectAddIntImmediate(t *testing.T) {
 		expect.Nil(t, err)
 
 		for iter := 0; iter < 2; iter++ {
-			destChunk := &ir.DefinitionChunk{}
 			dest := &ir.Definition{
-				Type:   ir.Int64,
-				Chunks: []*ir.DefinitionChunk{destChunk},
+				Type: ir.Int64,
 			}
-			destChunk.Definition = dest
+			destChunk := dest.Chunks()[0]
 
 			if iter == 0 { // right immediate
 				dest.Operation = &ir.BinaryOperation{
@@ -363,13 +358,12 @@ func TestSelectAddIntImmediate(t *testing.T) {
 
 func TestSelectAddUIntImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Uint64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	for _, immValue := range []uint64{
 		0x12345678,
@@ -377,12 +371,10 @@ func TestSelectAddUIntImmediate(t *testing.T) {
 		0,
 	} {
 		imm := ir.NewBasicImmediate(immValue)
-		immChunk := &ir.DefinitionChunk{}
 		immDef := &ir.Definition{
-			Name:   "imm",
-			Chunks: []*ir.DefinitionChunk{immChunk},
+			Name: "imm",
+			Type: ir.Uint64,
 		}
-		immChunk.Definition = immDef
 		imm.(*ir.Immediate).PseudoDefinition = immDef
 
 		immBytes := make([]byte, 8)
@@ -390,12 +382,10 @@ func TestSelectAddUIntImmediate(t *testing.T) {
 		expect.Nil(t, err)
 
 		for iter := 0; iter < 2; iter++ {
-			destChunk := &ir.DefinitionChunk{}
 			dest := &ir.Definition{
-				Type:   ir.Uint64,
-				Chunks: []*ir.DefinitionChunk{destChunk},
+				Type: ir.Uint64,
 			}
-			destChunk.Definition = dest
+			destChunk := dest.Chunks()[0]
 
 			if iter == 0 { // right immediate
 				dest.Operation = &ir.BinaryOperation{
@@ -472,34 +462,30 @@ func TestSelectAddUIntImmediate(t *testing.T) {
 // Fallback to RM encoding when immediate don't fit
 func TestSelectAddIntOversizedImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Int64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	for _, immValue := range []int64{
 		math.MaxInt32 + 1,
 		math.MinInt32 - 1,
 	} {
 		imm := ir.NewBasicImmediate(immValue)
-		immChunk := &ir.DefinitionChunk{}
 		immDef := &ir.Definition{
-			Name:   "imm",
-			Chunks: []*ir.DefinitionChunk{immChunk},
+			Name: "imm",
+			Type: ir.Int64,
 		}
-		immChunk.Definition = immDef
 		imm.(*ir.Immediate).PseudoDefinition = immDef
+		immChunk := immDef.Chunks()[0]
 
 		for iter := 0; iter < 2; iter++ {
-			destChunk := &ir.DefinitionChunk{}
 			dest := &ir.Definition{
-				Type:   ir.Int64,
-				Chunks: []*ir.DefinitionChunk{destChunk},
+				Type: ir.Int64,
 			}
-			destChunk.Definition = dest
+			destChunk := dest.Chunks()[0]
 
 			if iter == 0 { // right immediate
 				dest.Operation = &ir.BinaryOperation{
@@ -605,30 +591,26 @@ func TestSelectAddIntOversizedImmediate(t *testing.T) {
 // Fallback to RM encoding when immediate don't fit
 func TestSelectAddUintOversizedImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Uint64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	imm := ir.NewBasicImmediate(uint64(math.MaxInt32 + 1))
-	immChunk := &ir.DefinitionChunk{}
 	immDef := &ir.Definition{
-		Name:   "imm",
-		Chunks: []*ir.DefinitionChunk{immChunk},
+		Name: "imm",
+		Type: ir.Uint64,
 	}
-	immChunk.Definition = immDef
 	imm.(*ir.Immediate).PseudoDefinition = immDef
+	immChunk := immDef.Chunks()[0]
 
 	for iter := 0; iter < 2; iter++ {
-		destChunk := &ir.DefinitionChunk{}
 		dest := &ir.Definition{
-			Type:   ir.Uint64,
-			Chunks: []*ir.DefinitionChunk{destChunk},
+			Type: ir.Uint64,
 		}
-		destChunk.Definition = dest
+		destChunk := dest.Chunks()[0]
 
 		if iter == 0 { // right immediate
 			dest.Operation = &ir.BinaryOperation{
@@ -732,24 +714,21 @@ func TestSelectAddUintOversizedImmediate(t *testing.T) {
 
 func TestSelectAddIntNoHint(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Int64,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
+	src1Chunk := src1Def.Chunks()[0]
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Int64,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
+	src2Chunk := src2Def.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int64,
 		Operation: &ir.BinaryOperation{
@@ -757,9 +736,8 @@ func TestSelectAddIntNoHint(t *testing.T) {
 			Src1: src1,
 			Src2: src2,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -837,24 +815,21 @@ func TestSelectAddIntNoHint(t *testing.T) {
 
 func TestSelectAddIntCheapSrc1(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Int64,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
+	src1Chunk := src1Def.Chunks()[0]
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Int64,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
+	src2Chunk := src2Def.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int64,
 		Operation: &ir.BinaryOperation{
@@ -862,9 +837,8 @@ func TestSelectAddIntCheapSrc1(t *testing.T) {
 			Src1: src1,
 			Src2: src2,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -946,24 +920,21 @@ func TestSelectAddIntCheapSrc1(t *testing.T) {
 
 func TestSelectAddIntCheapSrc2(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Int64,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
+	src1Chunk := src1Def.Chunks()[0]
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Int64,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
+	src2Chunk := src2Def.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int64,
 		Operation: &ir.BinaryOperation{
@@ -971,9 +942,8 @@ func TestSelectAddIntCheapSrc2(t *testing.T) {
 			Src1: src1,
 			Src2: src2,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -1055,24 +1025,21 @@ func TestSelectAddIntCheapSrc2(t *testing.T) {
 
 func TestSelectAddIntPreferredSrc1(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Int64,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
+	src1Chunk := src1Def.Chunks()[0]
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Int64,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
+	src2Chunk := src2Def.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int64,
 		Operation: &ir.BinaryOperation{
@@ -1080,9 +1047,8 @@ func TestSelectAddIntPreferredSrc1(t *testing.T) {
 			Src1: src1,
 			Src2: src2,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -1164,24 +1130,21 @@ func TestSelectAddIntPreferredSrc1(t *testing.T) {
 
 func TestSelectAddIntPreferredSrc2(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Int64,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
+	src1Chunk := src1Def.Chunks()[0]
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Int64,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
+	src2Chunk := src2Def.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Int64,
 		Operation: &ir.BinaryOperation{
@@ -1189,9 +1152,8 @@ func TestSelectAddIntPreferredSrc2(t *testing.T) {
 			Src1: src1,
 			Src2: src2,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,
@@ -1273,24 +1235,21 @@ func TestSelectAddIntPreferredSrc2(t *testing.T) {
 
 func TestSelectAddFloatNoHint(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Float64,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
+	src1Chunk := src1Def.Chunks()[0]
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Float64,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
+	src2Chunk := src2Def.Chunks()[0]
 
-	destChunk := &ir.DefinitionChunk{}
 	dest := &ir.Definition{
 		Type: ir.Float64,
 		Operation: &ir.BinaryOperation{
@@ -1298,9 +1257,8 @@ func TestSelectAddFloatNoHint(t *testing.T) {
 			Src1: src1,
 			Src2: src2,
 		},
-		Chunks: []*ir.DefinitionChunk{destChunk},
 	}
-	destChunk.Definition = dest
+	destChunk := dest.Chunks()[0]
 
 	instruction := architecture.SelectInstruction(
 		testConfig,

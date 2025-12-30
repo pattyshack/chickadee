@@ -15,24 +15,20 @@ import (
 
 func TestJneUint(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Type:   ir.Uint32,
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Uint32,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
+	src1Chunk := src1Def.Chunks()[0]
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Type:   ir.Uint32,
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Uint32,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
+	src2Chunk := src2Def.Chunks()[0]
 
 	jump := &ir.ConditionalJump{
 		Kind:  ir.Jne,
@@ -112,22 +108,18 @@ func TestJneUint(t *testing.T) {
 
 func TestJneUintRightImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Uint64,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Uint64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	imm := ir.NewBasicImmediate(uint64(0))
-	immChunk := &ir.DefinitionChunk{}
 	immDef := &ir.Definition{
-		Name:   "imm",
-		Chunks: []*ir.DefinitionChunk{immChunk},
+		Name: "imm",
+		Type: ir.Uint64,
 	}
-	immChunk.Definition = immDef
 	imm.(*ir.Immediate).PseudoDefinition = immDef
 
 	jump := &ir.ConditionalJump{
@@ -194,23 +186,18 @@ func TestJneUintRightImmediate(t *testing.T) {
 
 func TestJneUintLeftImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Uint64,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Uint64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	imm := ir.NewBasicImmediate(uint64(math.MaxInt32))
-	immChunk := &ir.DefinitionChunk{}
 	immDef := &ir.Definition{
-		Name:   "imm",
-		Type:   imm.Type(),
-		Chunks: []*ir.DefinitionChunk{immChunk},
+		Name: "imm",
+		Type: imm.Type(),
 	}
-	immChunk.Definition = immDef
 	imm.(*ir.Immediate).PseudoDefinition = immDef
 
 	jump := &ir.ConditionalJump{
@@ -277,24 +264,20 @@ func TestJneUintLeftImmediate(t *testing.T) {
 
 func TestJneInt(t *testing.T) {
 	src1 := ir.NewLocalReference("src1")
-	src1Chunk := &ir.DefinitionChunk{}
 	src1Def := &ir.Definition{
-		Name:   "src1",
-		Type:   ir.Int32,
-		Chunks: []*ir.DefinitionChunk{src1Chunk},
+		Name: "src1",
+		Type: ir.Int32,
 	}
-	src1Chunk.Definition = src1Def
 	src1.(*ir.LocalReference).UseDef = src1Def
+	src1Chunk := src1Def.Chunks()[0]
 
 	src2 := ir.NewLocalReference("src2")
-	src2Chunk := &ir.DefinitionChunk{}
 	src2Def := &ir.Definition{
-		Name:   "src2",
-		Type:   ir.Int32,
-		Chunks: []*ir.DefinitionChunk{src2Chunk},
+		Name: "src2",
+		Type: ir.Int32,
 	}
-	src2Chunk.Definition = src2Def
 	src2.(*ir.LocalReference).UseDef = src2Def
+	src2Chunk := src2Def.Chunks()[0]
 
 	jump := &ir.ConditionalJump{
 		Kind:  ir.Jne,
@@ -374,22 +357,18 @@ func TestJneInt(t *testing.T) {
 
 func TestJneIntRightImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Int64,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Int64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	imm := ir.NewBasicImmediate(int64(math.MinInt32))
-	immChunk := &ir.DefinitionChunk{}
 	immDef := &ir.Definition{
-		Name:   "imm",
-		Chunks: []*ir.DefinitionChunk{immChunk},
+		Name: "imm",
+		Type: ir.Int64,
 	}
-	immChunk.Definition = immDef
 	imm.(*ir.Immediate).PseudoDefinition = immDef
 
 	jump := &ir.ConditionalJump{
@@ -456,23 +435,18 @@ func TestJneIntRightImmediate(t *testing.T) {
 
 func TestJneIntLeftImmediate(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Int64,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Int64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	imm := ir.NewBasicImmediate(int64(math.MaxInt32))
-	immChunk := &ir.DefinitionChunk{}
 	immDef := &ir.Definition{
-		Name:   "imm",
-		Type:   imm.Type(),
-		Chunks: []*ir.DefinitionChunk{immChunk},
+		Name: "imm",
+		Type: imm.Type(),
 	}
-	immChunk.Definition = immDef
 	imm.(*ir.Immediate).PseudoDefinition = immDef
 
 	jump := &ir.ConditionalJump{
@@ -539,24 +513,20 @@ func TestJneIntLeftImmediate(t *testing.T) {
 
 func TestJneFloat(t *testing.T) {
 	src := ir.NewLocalReference("src")
-	srcChunk := &ir.DefinitionChunk{}
 	srcDef := &ir.Definition{
-		Name:   "src",
-		Type:   ir.Float64,
-		Chunks: []*ir.DefinitionChunk{srcChunk},
+		Name: "src",
+		Type: ir.Float64,
 	}
-	srcChunk.Definition = srcDef
 	src.(*ir.LocalReference).UseDef = srcDef
+	srcChunk := srcDef.Chunks()[0]
 
 	imm := ir.NewBasicImmediate(float64(3))
-	immChunk := &ir.DefinitionChunk{}
 	immDef := &ir.Definition{
-		Name:   "imm",
-		Type:   imm.Type(),
-		Chunks: []*ir.DefinitionChunk{immChunk},
+		Name: "imm",
+		Type: imm.Type(),
 	}
-	immChunk.Definition = immDef
 	imm.(*ir.Immediate).PseudoDefinition = immDef
+	immChunk := immDef.Chunks()[0]
 
 	jump := &ir.ConditionalJump{
 		Kind:  ir.Jne,
