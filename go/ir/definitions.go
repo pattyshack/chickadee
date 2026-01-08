@@ -33,6 +33,12 @@ type FunctionDefinition struct {
 
 	CalleeSavedRegisters []*Definition
 
+	// NOTE: ReturnValue's definition type may not be indentical to the function
+	// return type.  When the function's call convention returns the value
+	// directly via registers or via a fixed stack entry location, the return
+	// value's definition type is the same as the return type.  When the
+	// function's call convention returns the value indirectly via memory at a
+	// specified address, the return value's definition type is the address type.
 	ReturnValue *Definition
 
 	ReturnAddress *Definition

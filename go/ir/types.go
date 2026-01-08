@@ -60,6 +60,14 @@ type UnsignedIntType struct {
 	chunks []*TypeChunk
 }
 
+func NewUnsignedIntType(byteSize int) *UnsignedIntType {
+	t := &UnsignedIntType{
+		ByteSize: byteSize,
+	}
+	t.chunks = simpleTypeChunk(t)
+	return t
+}
+
 func (*UnsignedIntType) isTypeExpression() {}
 
 func (this *UnsignedIntType) Equals(other Type) bool {
@@ -80,28 +88,14 @@ func (t *UnsignedIntType) Size() int {
 }
 
 func (t *UnsignedIntType) Chunks() []*TypeChunk {
-	if t.chunks == nil {
-		t.chunks = simpleTypeChunk(t)
-	}
 	return t.chunks
 }
 
 var (
-	Uint8 = &UnsignedIntType{
-		ByteSize: 1,
-	}
-
-	Uint16 = &UnsignedIntType{
-		ByteSize: 2,
-	}
-
-	Uint32 = &UnsignedIntType{
-		ByteSize: 4,
-	}
-
-	Uint64 = &UnsignedIntType{
-		ByteSize: 8,
-	}
+	Uint8  = NewUnsignedIntType(1)
+	Uint16 = NewUnsignedIntType(2)
+	Uint32 = NewUnsignedIntType(4)
+	Uint64 = NewUnsignedIntType(8)
 )
 
 type SignedIntType struct {
@@ -110,6 +104,14 @@ type SignedIntType struct {
 	// Internal (not part of the type signature)
 
 	chunks []*TypeChunk
+}
+
+func NewSignedIntType(byteSize int) *SignedIntType {
+	t := &SignedIntType{
+		ByteSize: byteSize,
+	}
+	t.chunks = simpleTypeChunk(t)
+	return t
 }
 
 func (*SignedIntType) isTypeExpression() {}
@@ -132,28 +134,14 @@ func (t *SignedIntType) Size() int {
 }
 
 func (t *SignedIntType) Chunks() []*TypeChunk {
-	if t.chunks == nil {
-		t.chunks = simpleTypeChunk(t)
-	}
 	return t.chunks
 }
 
 var (
-	Int8 = &SignedIntType{
-		ByteSize: 1,
-	}
-
-	Int16 = &SignedIntType{
-		ByteSize: 2,
-	}
-
-	Int32 = &SignedIntType{
-		ByteSize: 4,
-	}
-
-	Int64 = &SignedIntType{
-		ByteSize: 8,
-	}
+	Int8  = NewSignedIntType(1)
+	Int16 = NewSignedIntType(2)
+	Int32 = NewSignedIntType(4)
+	Int64 = NewSignedIntType(8)
 )
 
 type FloatType struct {
@@ -162,6 +150,14 @@ type FloatType struct {
 	// Internal (not part of the type signature)
 
 	chunks []*TypeChunk
+}
+
+func NewFloatType(byteSize int) *FloatType {
+	t := &FloatType{
+		ByteSize: byteSize,
+	}
+	t.chunks = simpleTypeChunk(t)
+	return t
 }
 
 func (*FloatType) isTypeExpression() {}
@@ -184,20 +180,12 @@ func (t *FloatType) Size() int {
 }
 
 func (t *FloatType) Chunks() []*TypeChunk {
-	if t.chunks == nil {
-		t.chunks = simpleTypeChunk(t)
-	}
 	return t.chunks
 }
 
 var (
-	Float32 = &FloatType{
-		ByteSize: 4,
-	}
-
-	Float64 = &FloatType{
-		ByteSize: 8,
-	}
+	Float32 = NewFloatType(4)
+	Float64 = NewFloatType(8)
 )
 
 // NOTE: Unlike c pointer, int8 address type is not the same as int8 array
@@ -209,6 +197,23 @@ type AddressType struct {
 	// Internal (not part of the type signature)
 
 	chunks []*TypeChunk
+}
+
+func NewAddressType(valueType Type) *AddressType {
+	t := &AddressType{
+		ValueType: valueType,
+	}
+	t.chunks = simpleTypeChunk(t)
+	return t
+}
+
+// NOTE: variable length array elements are not directly accessible.
+func NewVariableLengthArrayAddressType(elementType Type) *AddressType {
+	t := NewAddressType(&ArrayType{
+		ElementType: elementType,
+		NumElements: -1,
+	})
+	return t
 }
 
 func (*AddressType) isTypeExpression() {}
@@ -231,9 +236,6 @@ func (*AddressType) Size() int {
 }
 
 func (t *AddressType) Chunks() []*TypeChunk {
-	if t.chunks == nil {
-		t.chunks = simpleTypeChunk(t)
-	}
 	return t.chunks
 }
 
@@ -264,9 +266,27 @@ type FunctionType struct {
 	CallConvention interface{} // cached architecture.CallConvention
 }
 
+func NewFunctionType(
+	kind CallConventionKind,
+	parameterTypes []Type,
+	returnType Type,
+) *FunctionType {
+	t := &FunctionType{
+		CallConventionKind: kind,
+		ParameterTypes:     parameterTypes,
+		ReturnType:         returnType,
+	}
+	t.chunks = simpleTypeChunk(t)
+	return t
+}
+
 func (*FunctionType) isTypeExpression() {}
 
 func (thisFunction *FunctionType) Equals(other Type) bool {
+	if thisFunction == other {
+		return true
+	}
+
 	otherFunction, ok := other.(*FunctionType)
 	if !ok {
 		return false
@@ -285,10 +305,6 @@ func (thisFunction *FunctionType) Equals(other Type) bool {
 		}
 	}
 
-	if thisFunction.ReturnType == nil {
-		return otherFunction.ReturnType == nil
-	}
-
 	return thisFunction.ReturnType.Equals(otherFunction.ReturnType)
 }
 
@@ -297,15 +313,12 @@ func (*FunctionType) Size() int {
 }
 
 func (t *FunctionType) Chunks() []*TypeChunk {
-	if t.chunks == nil {
-		t.chunks = simpleTypeChunk(t)
-	}
 	return t.chunks
 }
 
 type ArrayType struct {
 	ElementType Type
-	// NOTE: use -1 for unknown length array, non-negative for fixed length array
+	// NOTE: -1 indicates variable length array (only accessible indirectly)
 	NumElements int
 
 	// NOTE: (internal use only) This is not part of the type signature.
@@ -314,18 +327,13 @@ type ArrayType struct {
 	chunks []*TypeChunk
 }
 
-func NewUnknownLengthArrayType(elementType Type) *ArrayType {
-	return &ArrayType{
-		ElementType: elementType,
-		NumElements: -1,
-	}
-}
-
-func NewFixedLengthArrayType(elementType Type, numElements int) *ArrayType {
-	return &ArrayType{
+func NewArrayType(elementType Type, numElements int) *ArrayType {
+	t := &ArrayType{
 		ElementType: elementType,
 		NumElements: numElements,
 	}
+	t.computeChunks()
+	return t
 }
 
 func (*ArrayType) isTypeExpression() {}
@@ -345,24 +353,20 @@ func (thisArray *ArrayType) Equals(other Type) bool {
 }
 
 func (t *ArrayType) Size() int {
-	t.maybeComputeChunks()
+	if t.NumElements < 0 {
+		panic("unknown number of elements in array")
+	}
 	return t.size
 }
 
 func (t *ArrayType) Chunks() []*TypeChunk {
-	t.maybeComputeChunks()
-	return t.chunks
-}
-
-func (t *ArrayType) maybeComputeChunks() {
-	if t.chunks != nil {
-		return
-	}
-
 	if t.NumElements < 0 {
 		panic("unknown number of elements in array")
 	}
+	return t.chunks
+}
 
+func (t *ArrayType) computeChunks() {
 	elementSize := t.ElementType.Size()
 	dataSize := t.NumElements * elementSize
 	numChunks := (dataSize + generalRegisterSize - 1) / generalRegisterSize
@@ -431,12 +435,29 @@ type Field struct {
 // location book keeping / code generation (a simple value in a packed struct
 // may span multiple data chunks)
 type StructType struct {
-	Fields []*Field
+	Fields []Field
 
 	// NOTE: (internal use only) This is not part of the type signature.
 
 	size   int
 	chunks []*TypeChunk
+}
+
+func NewStructType(fields []Field) *StructType {
+	names := map[string]struct{}{}
+	for _, field := range fields {
+		_, ok := names[field.Name]
+		if ok {
+			panic("duplicate field name: " + field.Name)
+		}
+		names[field.Name] = struct{}{}
+	}
+
+	t := &StructType{
+		Fields: fields,
+	}
+	t.computeChunks()
+	return t
 }
 
 func (*StructType) isTypeExpression() {}
@@ -466,17 +487,17 @@ func (thisStruct *StructType) Equals(other Type) bool {
 }
 
 func (t *StructType) Size() int {
-	t.maybeComputeChunks()
 	return len(t.chunks) * generalRegisterSize
 }
 
 func (t *StructType) Chunks() []*TypeChunk {
-	t.maybeComputeChunks()
 	return t.chunks
 }
 
-func (t *StructType) maybeComputeChunks() {
-	if t.chunks != nil {
+func (t *StructType) computeChunks() {
+	if len(t.Fields) == 0 {
+		t.chunks = []*TypeChunk{}
+		t.size = 0
 		return
 	}
 
@@ -485,36 +506,71 @@ func (t *StructType) maybeComputeChunks() {
 	currentSize := 0
 	for _, field := range t.Fields {
 		fieldSize := field.Type.Size()
-		fieldAlignment := alignment(fieldSize)
 
-		mod := currentSize % fieldAlignment
-		if mod > 0 {
-			currentSize += fieldAlignment - mod
+		// Field fits into a single chunk
+		if fieldSize <= generalRegisterSize {
+			// Field does not fit into current chunk.  Need to start a new chunk
+			if currentSize+fieldSize > generalRegisterSize {
+				chunks = append(chunks, currentChunk)
+				currentChunk = &TypeChunk{}
+				currentSize = 0
+			}
+
+			// Adjust field alignment
+			fieldAlignment := Alignment(fieldSize)
+			mod := currentSize % fieldAlignment
+			if mod > 0 {
+				currentSize += fieldAlignment - mod
+			}
+
+			if currentSize+fieldSize > generalRegisterSize {
+				panic("should never happen")
+			}
+
+			currentChunk.Values = append(
+				currentChunk.Values,
+				TypeChunkValue{
+					Index:     len(chunks),
+					Offset:    currentSize,
+					ValueType: field.Type,
+				})
+			currentSize += fieldSize
+			continue
 		}
 
-		if currentSize+fieldSize > generalRegisterSize {
+		// Field spans multiple chunk
+
+		if currentSize > 0 { // Multi-chunk field must be chunk aligned
 			chunks = append(chunks, currentChunk)
 			currentChunk = &TypeChunk{}
 			currentSize = 0
 		}
 
-		currentChunk.Values = append(
-			currentChunk.Values,
-			TypeChunkValue{
-				Index:     len(chunks),
-				Offset:    currentSize,
-				ValueType: field.Type,
-			})
-		currentSize += fieldSize
+		for _, fieldChunk := range field.Type.Chunks() {
+			chunks = append(
+				chunks,
+				&TypeChunk{
+					Values: []TypeChunkValue{
+						{
+							Index:          len(chunks),
+							Offset:         0,
+							ValueType:      field.Type,
+							ValueTypeChunk: fieldChunk,
+						},
+					},
+				})
+		}
 	}
 
-	chunks = append(chunks, currentChunk)
+	if currentSize > 0 {
+		chunks = append(chunks, currentChunk)
+	}
 
 	t.size = len(chunks) * generalRegisterSize
 	t.chunks = chunks
 }
 
-func alignment(typeSize int) int {
+func Alignment(typeSize int) int {
 	switch typeSize {
 	case 0, 1, 2, 4, 8:
 		return typeSize
