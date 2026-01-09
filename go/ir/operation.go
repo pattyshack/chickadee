@@ -97,17 +97,17 @@ type BinaryOperation struct {
 	Src2 Value
 }
 
-type FuncCallKind string
+type FunctionCallKind string
 
 const (
-	Call = FuncCallKind("call")
+	Call = FunctionCallKind("call")
 )
 
 // NOTE: function always return a value.  Use empty struct for void
-type FuncCall struct {
+type FunctionCall struct {
 	operation
 
-	Kind      FuncCallKind
+	Kind      FunctionCallKind
 	Function  Value
 	Arguments []Value
 }
