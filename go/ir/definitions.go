@@ -1,6 +1,10 @@
 package ir
 
 const (
+	// All side effect free operations are prunable.  All other operations,
+	// including calls, are not prunable.
+	IgnoreValue = "_"
+
 	// All internal definition names are prefixed by "%"
 	PreviousFramePointer = "%previous-frame-pointer"
 	CurrentFramePointer  = "%current-frame-pointer"

@@ -299,7 +299,7 @@ func selectOperation(
 		return selectUnaryOperation(config, instruction, operation, hint)
 	case *ir.BinaryOperation:
 		return selectBinaryOperation(config, instruction, operation, hint)
-	case *ir.FuncCall:
+	case *ir.FunctionCall:
 		panic("TODO")
 	default:
 		panic(fmt.Sprintf("unsupported operation: %#v", instruction.Operation))

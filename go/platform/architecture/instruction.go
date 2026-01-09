@@ -14,11 +14,11 @@ type RegisterConstraint struct {
 	Require *Register
 }
 
-// When a source register (constraint) is mapped to a definition chunk, the
-// register may or may not be clobbered.
+// When a source register (constraint) is mapped to a definition chunk (or a
+// location), the register may or may not be clobbered.
 //
-// When a source register (constraint) is not mapped to any definition chunk,
-// the register is a scratch register and it must be clobbered.
+// When a source register (constraint) is not mapped to any definition chunk
+// (or location), the register is a scratch register and it must be clobbered.
 //
 // Destination register (constraint) are always clobbered.
 //
@@ -26,12 +26,14 @@ type RegisterConstraint struct {
 // for passing arguments are represented as scratch registers (callee-saved
 // registers that aren't used for passing arguments are specified in
 // SourceRegisters).
-//
-// TODO: create a pseudo definition for call's frame pointer materialization
 type RegisterMapping struct {
 	*RegisterConstraint
 
 	*ir.DefinitionChunk
+
+	// Only used by call to return value indirectly.
+	DefinitionLocation *ir.Definition
+	TempStackLocation  *StackEntry
 }
 
 type StackEntryMapping struct {
@@ -61,7 +63,7 @@ type InstructionConstraints struct {
 	RegisterDestinations []RegisterMapping
 
 	// Only used by call instruction.  This is nil if the destination value is
-	// on registers.
+	// on registers, or if the value is returned indirectly.
 	StackDestination *StackEntryMapping
 }
 
