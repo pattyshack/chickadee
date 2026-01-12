@@ -10,6 +10,12 @@ import (
 	"github.com/pattyshack/chickadee/platform/architecture"
 )
 
+var (
+	testConfig = architecture.Config{
+		Registers: registers.Registers,
+	}
+)
+
 func TestRegistersPicker(t *testing.T) {
 	picker := newRegistersPicker(
 		sysVGeneralParameterRegisters,
@@ -933,4 +939,375 @@ func TestSysVCallWithStack(t *testing.T) {
 		t,
 		24+32+40+1+1+2+4+24,
 		convention.CallFrameSize)
+}
+
+func TestSysVCallConstraintsDirectCall(t *testing.T) {
+	callFunctionType := ir.NewFunctionType(
+		ir.SysVLiteCallConvention,
+		[]ir.Type{
+			ir.Int16,
+			ir.Int32,
+		},
+		ir.Int64)
+
+	arg1 := ir.NewBasicImmediate(int16(16))
+	arg1Def := &ir.Definition{
+		Name: "arg1",
+		Type: ir.Int16,
+	}
+	arg1.(*ir.Immediate).PseudoDefinition = arg1Def
+
+	arg2 := ir.NewBasicImmediate(int32(32))
+	arg2Def := &ir.Definition{
+		Name: "arg2",
+		Type: ir.Int32,
+	}
+	arg2.(*ir.Immediate).PseudoDefinition = arg2Def
+
+	call := &ir.FunctionCall{
+		Kind:      ir.Call,
+		Function:  ir.NewGlobalReference("function"),
+		Arguments: []ir.Value{arg1, arg2},
+	}
+
+	instruction := &ir.Definition{
+		Name:      "ret",
+		Type:      ir.Int64,
+		Operation: call,
+	}
+
+	block := &ir.Block{
+		Operations: []*ir.Definition{instruction},
+	}
+
+	framePtrDef := &ir.Definition{
+		Name:               ir.CurrentFramePointer,
+		Type:               ir.NewVariableLengthArrayAddressType(ir.Int8),
+		IsPseudoDefinition: true,
+	}
+
+	funcDef := &ir.FunctionDefinition{
+		Name: "body",
+		Type: ir.NewFunctionType(
+			ir.SysVLiteCallConvention,
+			nil,
+			ir.Int32),
+		Blocks:              []*ir.Block{block},
+		CurrentFramePointer: framePtrDef,
+	}
+
+	instruction.Block = block
+	block.Function = funcDef
+
+	convention := sysVLite{}.Compute(callFunctionType)
+	constraints := convention.CallConstraints(
+		testConfig,
+		instruction,
+		call)
+
+	calleeSaved := map[*architecture.RegisterConstraint]struct{}{}
+	for idx, source := range constraints.RegisterSources {
+		switch idx {
+		case 0: // rbp -> base pointer
+			expect.Equal(
+				t,
+				architecture.RegisterMapping{
+					RegisterConstraint: &architecture.RegisterConstraint{
+						Clobbered: false,
+						Require:   registers.Rbp,
+					},
+					DefinitionChunk: framePtrDef.Chunks()[0],
+				},
+				source)
+		case 1: // rdi -> int16 chunk
+			expect.Equal(
+				t,
+				architecture.RegisterMapping{
+					RegisterConstraint: &architecture.RegisterConstraint{
+						Clobbered: true,
+						Require:   registers.Rdi,
+					},
+					DefinitionChunk: arg1Def.Chunks()[0],
+				},
+				source)
+		case 2: // rsi -> int32 chunk
+			expect.Equal(
+				t,
+				architecture.RegisterMapping{
+					RegisterConstraint: &architecture.RegisterConstraint{
+						Clobbered: true,
+						Require:   registers.Rsi,
+					},
+					DefinitionChunk: arg2Def.Chunks()[0],
+				},
+				source)
+		default: // callee saved register
+			expect.Nil(t, source.DefinitionChunk)
+			expect.Nil(t, source.TempStackLocation)
+			calleeSaved[source.RegisterConstraint] = struct{}{}
+		}
+	}
+
+	for register, constraint := range convention.Registers {
+		if register == registers.Rdi || register == registers.Rsi {
+			continue
+		}
+
+		_, ok := calleeSaved[constraint]
+		expect.Equal(t, constraint.Clobbered, ok)
+	}
+
+	expect.Equal(t, 0, len(constraints.StackSources))
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(
+		t,
+		[]architecture.RegisterMapping{
+			{
+				RegisterConstraint: &architecture.RegisterConstraint{
+					Clobbered: true,
+					Require:   registers.Rax,
+				},
+				DefinitionChunk: instruction.Chunks()[0],
+			},
+		},
+		constraints.RegisterDestinations)
+}
+
+func TestSysVCallConstraintsIndirectCall(t *testing.T) {
+	callFunctionType := ir.NewFunctionType(
+		ir.SysVLiteCallConvention,
+		nil,
+		ir.Int64)
+
+	funcAddr := ir.NewLocalReference("function")
+	funcAddrDef := &ir.Definition{
+		Name: "function",
+		Type: callFunctionType,
+	}
+	funcAddr.(*ir.LocalReference).UseDef = funcAddrDef
+
+	call := &ir.FunctionCall{
+		Kind:      ir.Call,
+		Function:  funcAddr,
+		Arguments: nil,
+	}
+
+	instruction := &ir.Definition{
+		Name:      "ret",
+		Type:      ir.Int64,
+		Operation: call,
+	}
+
+	block := &ir.Block{
+		Operations: []*ir.Definition{instruction},
+	}
+
+	framePtrDef := &ir.Definition{
+		Name:               ir.CurrentFramePointer,
+		Type:               ir.NewVariableLengthArrayAddressType(ir.Int8),
+		IsPseudoDefinition: true,
+	}
+
+	funcDef := &ir.FunctionDefinition{
+		Name: "body",
+		Type: ir.NewFunctionType(
+			ir.SysVLiteCallConvention,
+			nil,
+			ir.Int32),
+		Blocks:              []*ir.Block{block},
+		CurrentFramePointer: framePtrDef,
+	}
+
+	instruction.Block = block
+	block.Function = funcDef
+
+	convention := sysVLite{}.Compute(callFunctionType)
+	constraints := convention.CallConstraints(
+		testConfig,
+		instruction,
+		call)
+
+	calleeSaved := map[*architecture.RegisterConstraint]struct{}{}
+	for idx, source := range constraints.RegisterSources {
+		switch idx {
+		case 0: // r11 -> function address
+		case 1: // rbp -> base pointer
+			expect.Equal(
+				t,
+				architecture.RegisterMapping{
+					RegisterConstraint: &architecture.RegisterConstraint{
+						Clobbered: false,
+						Require:   registers.Rbp,
+					},
+					DefinitionChunk: framePtrDef.Chunks()[0],
+				},
+				source)
+		default: // callee saved register
+			expect.Nil(t, source.DefinitionChunk)
+			expect.Nil(t, source.TempStackLocation)
+			calleeSaved[source.RegisterConstraint] = struct{}{}
+		}
+	}
+
+	for register, constraint := range convention.Registers {
+		if register == registers.R11 {
+			continue
+		}
+
+		_, ok := calleeSaved[constraint]
+		expect.Equal(t, constraint.Clobbered, ok)
+	}
+
+	expect.Equal(t, 0, len(constraints.StackSources))
+	expect.Nil(t, constraints.StackDestination)
+
+	expect.Equal(
+		t,
+		[]architecture.RegisterMapping{
+			{
+				RegisterConstraint: &architecture.RegisterConstraint{
+					Clobbered: true,
+					Require:   registers.Rax,
+				},
+				DefinitionChunk: instruction.Chunks()[0],
+			},
+		},
+		constraints.RegisterDestinations)
+}
+
+func TestSysVCallConstraintsWithStack(t *testing.T) {
+	array3Type := ir.NewArrayType(ir.Int64, 3)
+	array4Type := ir.NewArrayType(ir.Int64, 3)
+
+	callFunctionType := ir.NewFunctionType(
+		ir.SysVLiteCallConvention,
+		[]ir.Type{
+			array3Type,
+			array4Type,
+		},
+		array3Type)
+
+	arg1 := ir.NewLocalReference("arg1")
+	arg1Def := &ir.Definition{
+		Name: "arg1",
+		Type: array3Type,
+	}
+	arg1.(*ir.LocalReference).UseDef = arg1Def
+
+	arg2 := ir.NewLocalReference("arg2")
+	arg2Def := &ir.Definition{
+		Name: "arg2",
+		Type: array4Type,
+	}
+	arg2.(*ir.LocalReference).UseDef = arg2Def
+
+	call := &ir.FunctionCall{
+		Kind:      ir.Call,
+		Function:  ir.NewGlobalReference("function"),
+		Arguments: []ir.Value{arg1, arg2},
+	}
+
+	instruction := &ir.Definition{
+		Name:      "ret",
+		Type:      array3Type,
+		Operation: call,
+	}
+
+	block := &ir.Block{
+		Operations: []*ir.Definition{instruction},
+	}
+
+	framePtrDef := &ir.Definition{
+		Name:               ir.CurrentFramePointer,
+		Type:               ir.NewVariableLengthArrayAddressType(ir.Int8),
+		IsPseudoDefinition: true,
+	}
+
+	funcDef := &ir.FunctionDefinition{
+		Name: "body",
+		Type: ir.NewFunctionType(
+			ir.SysVLiteCallConvention,
+			nil,
+			ir.Int32),
+		Blocks:              []*ir.Block{block},
+		CurrentFramePointer: framePtrDef,
+	}
+
+	instruction.Block = block
+	block.Function = funcDef
+
+	convention := sysVLite{}.Compute(callFunctionType)
+	expect.Equal(t, 3, len(convention.CallFrameLayout))
+
+	constraints := convention.CallConstraints(
+		testConfig,
+		instruction,
+		call)
+
+	calleeSaved := map[*architecture.RegisterConstraint]struct{}{}
+	for idx, source := range constraints.RegisterSources {
+		switch idx {
+		case 0: // rbp -> base pointer
+			expect.Equal(
+				t,
+				architecture.RegisterMapping{
+					RegisterConstraint: &architecture.RegisterConstraint{
+						Clobbered: false,
+						Require:   registers.Rbp,
+					},
+					DefinitionChunk: framePtrDef.Chunks()[0],
+				},
+				source)
+		case 1: // rdi -> return value's temp stack entry location
+			expect.Equal(
+				t,
+				architecture.RegisterMapping{
+					RegisterConstraint: &architecture.RegisterConstraint{
+						Clobbered: true,
+						Require:   registers.Rdi,
+					},
+					TempStackLocation: convention.CallFrameLayout[2],
+				},
+				source)
+		default: // callee saved register
+			expect.Nil(t, source.DefinitionChunk)
+			expect.Nil(t, source.TempStackLocation)
+			calleeSaved[source.RegisterConstraint] = struct{}{}
+		}
+	}
+
+	for register, constraint := range convention.Registers {
+		if register == registers.Rdi {
+			continue
+		}
+
+		_, ok := calleeSaved[constraint]
+		expect.Equal(t, constraint.Clobbered, ok)
+	}
+
+	expect.Equal(
+		t,
+		[]architecture.StackEntryMapping{
+			{
+				StackEntry: convention.CallFrameLayout[0],
+				Definition: arg1Def,
+			},
+			{
+				StackEntry: convention.CallFrameLayout[1],
+				Definition: arg2Def,
+			},
+		},
+		constraints.StackSources)
+
+	// NOTE: there's technically a register return value, but we'll ignore it.
+	expect.Equal(t, 0, len(constraints.RegisterDestinations))
+
+	expect.Equal(
+		t,
+		&architecture.StackEntryMapping{
+			StackEntry: convention.CallFrameLayout[2],
+			Definition: instruction,
+		},
+		constraints.StackDestination)
 }

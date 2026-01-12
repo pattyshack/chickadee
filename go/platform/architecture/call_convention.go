@@ -222,3 +222,121 @@ func (convention *CallConvention) SetIndirectReturnValue(
 		},
 	}
 }
+
+func (convention *CallConvention) CallConstraints(
+	config Config,
+	instruction *ir.Definition,
+	call *ir.FunctionCall,
+) InstructionConstraints {
+	constraints := InstructionConstraints{}
+	used := map[*RegisterConstraint]struct{}{}
+
+	_, isIndirect := call.Function.(*ir.LocalReference)
+	if isIndirect {
+		constraints.RegisterSources = append(
+			constraints.RegisterSources,
+			RegisterMapping{
+				RegisterConstraint: convention.FunctionAddress,
+				DefinitionChunk:    call.Function.Def().Chunks()[0],
+			})
+		used[convention.FunctionAddress] = struct{}{}
+	}
+
+	if convention.BasePointer != nil {
+		constraints.RegisterSources = append(
+			constraints.RegisterSources,
+			RegisterMapping{
+				RegisterConstraint: convention.BasePointer,
+				DefinitionChunk: instruction.Block.Function.
+					CurrentFramePointer.Chunks()[0],
+			})
+		used[convention.BasePointer] = struct{}{}
+	}
+
+	// Indirect return value
+	if convention.ReturnValue.AddressParameter != nil {
+		// XXX: For now, we will unconditionally return the value via the
+		// allocated scratch space.
+		//
+		// As an optimization, we can use the destination's stack entry location
+		// directly if we can ensure that source and destination do not interfere
+		// with each other.
+		constraints.RegisterSources = append(
+			constraints.RegisterSources,
+			RegisterMapping{
+				RegisterConstraint: convention.ReturnValue.AddressParameter,
+				TempStackLocation:  convention.ReturnValue.ScratchSpace,
+			})
+		used[convention.ReturnValue.AddressParameter] = struct{}{}
+	}
+
+	for argIdx, argument := range call.Arguments {
+		mapping := convention.Arguments[argIdx]
+		if mapping.StackEntry != nil {
+			constraints.StackSources = append(
+				constraints.StackSources,
+				StackEntryMapping{
+					StackEntry: mapping.StackEntry,
+					Definition: argument.Def(),
+				})
+		} else {
+			for chunkIdx, chunk := range argument.Def().Chunks() {
+				register := mapping.Registers[chunkIdx]
+				constraints.RegisterSources = append(
+					constraints.RegisterSources,
+					RegisterMapping{
+						RegisterConstraint: register,
+						DefinitionChunk:    chunk,
+					})
+				used[register] = struct{}{}
+			}
+		}
+	}
+
+	// Evict unused caller-saved registers
+	for _, register := range config.Registers.Data {
+		registerConstraint := convention.Registers[register]
+		if !registerConstraint.Clobbered {
+			continue
+		}
+
+		_, ok := used[registerConstraint]
+		if ok {
+			continue
+		}
+
+		constraints.RegisterSources = append(
+			constraints.RegisterSources,
+			RegisterMapping{
+				RegisterConstraint: registerConstraint,
+			})
+	}
+
+	if convention.ReturnValue.AddressParameter == nil { // Direct return value
+		if convention.ReturnValue.ReturnMapping.StackEntry != nil {
+			constraints.StackDestination = &StackEntryMapping{
+				StackEntry: convention.ReturnValue.ReturnMapping.StackEntry,
+				Definition: instruction,
+			}
+		} else {
+			for chunkIdx, chunk := range instruction.Chunks() {
+				constraints.RegisterDestinations = append(
+					constraints.RegisterDestinations,
+					RegisterMapping{
+						RegisterConstraint: convention.ReturnValue.ReturnMapping.
+							Registers[chunkIdx],
+						DefinitionChunk: chunk,
+					})
+			}
+		}
+	} else { // Indirect return value
+		// NOTE: The value returned by register is the scratch space's address.
+		// We'll simply ignore it.
+		constraints.StackDestination = &StackEntryMapping{
+			StackEntry: convention.ReturnValue.ScratchSpace,
+			Definition: instruction,
+		}
+	}
+
+	return constraints
+}
